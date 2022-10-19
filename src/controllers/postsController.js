@@ -17,12 +17,13 @@ async function sendPost(req, res) {
 
 	try {
 		if (content) {
-			const hashtable = content
+			const hashtagsHashtable = {};
+			content
 				.split(' ')
 				.filter((word) => word[0] === '#')
-				.forEach((element) => (hashtable[element] = true));
+				.forEach((element) => (hashtagsHashtable[element] = true));
 			let valuesString = '';
-			for (let i = 1; i <= Object.keys(hashtable).length; i++) {
+			for (let i = 1; i <= Object.keys(hashtagsHashtable).length; i++) {
 				valuesString += `($${i}), `;
 			}
 			valuesString = valuesString.trim().replace(/.$/, '');
@@ -43,7 +44,13 @@ async function sendPost(req, res) {
 			// 	`INSERT INTO hashtags (hashtag) VALUES ${valuesString}`,
 			// 	hashtags
 			// );
-			res.status(201).send({ valuesString, hashtags: Object.keys(hashtable) });
+			res
+				.status(201)
+				.send({
+					valuesString,
+					hashtags: Object.keys(hashtagsHashtable),
+					content,
+				});
 		} else {
 			await connection.query(
 				'INSERT INTO posts (link, "userId") VALUES($1, $2)',
