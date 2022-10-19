@@ -4,8 +4,8 @@ import { v4 as uuid } from "uuid"
 import bcrypt from "bcrypt"
 
 async function register(req, res) {
-    let { username, email, password, image } = req.body
-    const isValid = registerSchema.validate({ username, email, password, confirmPassword })
+    let { name, username, email, password, image } = req.body
+    const isValid = registerSchema.validate({ name, username, email, password, image })
 
     if (isValid.error) {
         return res.sendStatus(422)
@@ -14,13 +14,14 @@ async function register(req, res) {
     password = bcrypt.hashSync(password, 10)
 
     try {
-        const query = await connection.query('INSERT INTO users (username, email, password, image) VALUES ($1,$2,$3,$4);', [username, email, password,image])
+        const query = await connection.query('INSERT INTO users (name, username, email, password, image) VALUES ($1,$2,$3,$4, $5);', [name, username, email, password, image])
         return res.sendStatus(201)
 
     } catch (error) {
         if (error.code === "23505") {
             return res.sendStatus(409)
         }
+        console.log(error)
         return res.sendStatus(500)
     }
 }
@@ -49,9 +50,10 @@ async function login(req, res) {
     }
 
     try {
-        const query = await connection.query('INSERT INTO sessions (token,userId) VALUES ($1, $2);', [token, userId])
+        const query = await connection.query('INSERT INTO sessions (token,"userId") VALUES ($1, $2);', [token, userId])
         return res.send({token})
     } catch (error) {
+        console.log(error)
         res.sendStatus(500)
     }
     return res.sendStatus(200)
