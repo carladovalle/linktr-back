@@ -21,7 +21,9 @@ async function sendPost(req, res) {
 			content
 				.split(' ')
 				.filter((word) => word[0] === '#')
-				.forEach((element) => (hashtagsHashtable[element] = true));
+				.forEach(
+					(element) => (hashtagsHashtable[element.toLowerCase()] = true)
+				);
 			let valuesString = '';
 			for (let i = 1; i <= Object.keys(hashtagsHashtable).length; i++) {
 				valuesString += `($${i}), `;
@@ -53,11 +55,9 @@ async function sendPost(req, res) {
 			);
 			valuesString = '';
 			for (let i = 1; i <= hashtagsIdList.length; i++) {
-				valuesString += `($1, $${i+1}), `;
+				valuesString += `($1, $${i + 1}), `;
 			}
 			valuesString = valuesString.trim().replace(/.$/, '');
-
-			console.log([insertedPostId.rows[0].id, ...hashtagsIdList], valuesString);
 
 			await connection.query(
 				`INSERT INTO "postsHashtags" ("postId", "hashtagId") VALUES ${valuesString}`,
