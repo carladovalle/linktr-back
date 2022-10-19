@@ -14,6 +14,8 @@ async function sendPost(req, res) {
 			.send(`The following errors an occurred:\n\n${errors}`);
 	}
 
+	const hashtags = content.split(' ').filter((word) => word[0] === '#');
+	return res.send(hashtags);
 }
 
-export {};
+export { sendPost };
