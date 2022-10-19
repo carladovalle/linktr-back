@@ -2,7 +2,7 @@ import express from "express"
 import cors from "cors"
 import authRoutes from "./routes/authRoute.js"
 import postRoutes from "./routes/postRoute.js"
-import route from "./src/routes/routes.js"
+import route from "./routes/routes.js"
 import dotenv from "dotenv"
 
 const server = express();

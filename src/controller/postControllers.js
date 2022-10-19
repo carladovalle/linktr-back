@@ -32,6 +32,60 @@ async function listPosts(req, res) {
     }
 }
 
+
+async function editPost (req, res) {
+
+    const { id } = req.params;
+
+    const {content, link, userId } = req.body;
+
+    try {
+
+        await connection.query(`UPDATE posts SET (content, link, "userId") = ('${content}', '${link}', '${userId}') WHERE id = $1;`, [id]);
+
+        res.sendStatus(200);
+
+    } catch (error) {
+        return res.status(422).send(error.message);
+    }
+
+}
+
+async function createPost (req, res) {
+
+    try {
+
+        const {content, link, userId } = req.body;
+
+        await connection.query(`INSERT INTO posts (content, link, "userId") VALUES ($1, $2, $3);`, [content, link, userId]);
+
+        res.sendStatus(201);
+
+    } catch (error) {
+        return res.status(422).send(error.message);
+    }
+
+}
+
+async function createUser (req, res) {
+
+    try {
+
+        const {email, username, password, name, image } = req.body;
+
+        await connection.query(`INSERT INTO users (email, username, password, name, image) VALUES ($1, $2, $3, $4, $5);`, [email, username, password, name, image]);
+        
+        res.sendStatus(201);
+
+    } catch (error) {
+        return res.status(422).send(error.message);
+    }
+
+}
+
 export {
-    listPosts
+    listPosts, 
+    editPost, 
+    createPost, 
+    createUser
 }
