@@ -83,9 +83,26 @@ async function createUser (req, res) {
 
 }
 
+async function deletePost (req, res) {
+
+    const { id } = req.params;
+
+    try {
+
+        await connection.query(`DELETE FROM posts WHERE id = $1;`, [id]);
+
+        return res.sendStatus(200);
+
+    } catch (error) {
+        return res.status(422).send(error.message);
+    }
+
+}
+
 export {
     listPosts, 
     editPost, 
     createPost, 
-    createUser
+    createUser,
+    deletePost
 }
