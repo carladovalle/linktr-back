@@ -39,14 +39,20 @@ async function editPost (req, res) {
 
     const {content, link, userId } = req.body;
 
-    try {
+    if (id) {
 
-        await connection.query(`UPDATE posts SET (content, link, "userId") = ('${content}', '${link}', '${userId}') WHERE id = $1;`, [id]);
+        try {
 
-        res.sendStatus(200);
+            await connection.query(`UPDATE posts SET (content, link, "userId") = ('${content}', '${link}', '${userId}') WHERE id = $1;`, [id]);
+    
+            res.sendStatus(200);
+    
+        } catch (error) {
+            return res.status(422).send(error.message);
+        }
 
-    } catch (error) {
-        return res.status(422).send(error.message);
+    } else {
+        return res.status(404).status('ID nulo');
     }
 
 }
@@ -87,14 +93,20 @@ async function deletePost (req, res) {
 
     const { id } = req.params;
 
-    try {
+    if (id) {
 
-        await connection.query(`DELETE FROM posts WHERE id = $1;`, [id]);
+        try {
 
-        return res.sendStatus(200);
+            await connection.query(`DELETE FROM posts WHERE id = $1;`, [id]);
+    
+            return res.sendStatus(200);
+    
+        } catch (error) {
+            return res.status(422).send(error.message);
+        }
 
-    } catch (error) {
-        return res.status(422).send(error.message);
+    } else {
+        return res.status(404).status('ID nulo');
     }
 
 }
