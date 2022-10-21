@@ -2,7 +2,6 @@ import { connection } from '../db/db.js';
 
 async function searchUsers(req, res) {
 	const { word } = req.params;
-	console.log(word);
 	const wordWithJoker = word + '%';
 
 	try {
