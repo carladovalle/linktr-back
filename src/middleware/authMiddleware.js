@@ -4,7 +4,8 @@ import dotenv from 'dotenv';
 dotenv.config()
 
 async function authMiddleware(req, res, next) {
-	const { token } = req.body
+	const { authorization } = req.headers;
+    const token = authorization?.replace('Bearer ', '');
 
 	if (!token) {
 		return res.sendStatus(400);
