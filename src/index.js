@@ -5,13 +5,14 @@ import postsRoute from './routes/postsRoute.js';
 import searchRoutes from './routes/searchRoute.js';
 import likesRoute from './routes/likesRoute.js';
 import dotenv from 'dotenv';
+import { authMiddleware } from './middleware/authMiddleware.js';
 
 const server = express();
 dotenv.config();
 server.use(cors());
 server.use(express.json());
 
-server.get('/status', (req, res) => res.sendStatus(200));
+server.get('/status', authMiddleware, (req,res) => res.sendStatus(200));
 
 server.use(authRoutes);
 server.use(postsRoute);
