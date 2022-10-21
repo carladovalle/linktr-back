@@ -54,7 +54,7 @@ async function login(req, res) {
         return res.send({token})
     } catch (error) {
         console.log(error)
-        res.sendStatus(500)
+        return res.sendStatus(500)
     }
     return res.sendStatus(200)
 }
