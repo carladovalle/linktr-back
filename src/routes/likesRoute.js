@@ -6,6 +6,6 @@ const router = Router();
 
 router.get("/likes", authMiddleware, getLikes);
 router.post("/likes", authMiddleware, addLike);
-router.delete("/likes", authMiddleware, removeLike);
+router.delete("/likes/:postId", authMiddleware, removeLike);
 
 export default router;

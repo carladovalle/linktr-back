@@ -20,7 +20,6 @@ async function authMiddleware(req, res, next) {
 		res.locals.session = session.rows[0];
 		next();
 	} catch (error) {
-		console.log(error);
 		return res.sendStatus(401);
 	}
 }
