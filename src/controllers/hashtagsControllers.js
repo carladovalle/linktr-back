@@ -19,7 +19,6 @@ async function listHashtags(req, res) {
 async function findPostByHashtag(req, res) {
     const {hashtag} = req.params
     const list = []
-    console.log(req.params)
 
 	try {
 		const query = await connection.query(`
