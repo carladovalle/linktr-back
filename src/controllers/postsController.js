@@ -100,9 +100,7 @@ async function listPosts(req, res) {
 					})
 			}
 			
-			res.send(list)
-
-		res.send(list);
+		res.send(list)
 	} catch (error) {
 		console.log(error);
 		return res.sendStatus(500);
