@@ -1,25 +1,28 @@
-import { connection } from "../db/db.js";
+import { connection } from '../db/db.js';
 
 async function authMiddleware(req, res, next) {
-    const token = req.headers.authorization?.replace("Bearer ", "")
+	const token = req.headers.authorization?.replace('Bearer ', '');
 
-    if (!token) {
-        return res.sendStatus(400)
-    }
+	if (!token) {
+		return res.sendStatus(400);
+	}
 
-    try {
-        const session = await connection.query('SELECT * FROM sessions JOIN users ON userId = users.id WHERE token = $1;', [token])
+	try {
+		const session = await connection.query(
+			`SELECT * FROM sessions JOIN users ON sessions."userId" = users.id WHERE sessions.token = $1;`,
+			[token]
+		);
 
-        if (!session.rows[0].userid) {
-            return res.sendStatus(400)
-        }
+		if (!session.rows[0].userId) {
+			return res.sendStatus(400);
+		}
 
-        res.locals.session = session.rows[0]
-        next()
-    } catch (error) {
-        console.log(error)
-        return res.sendStatus(401)
-    }
+		res.locals.session = session.rows[0];
+		next();
+	} catch (error) {
+		console.log(error);
+		return res.sendStatus(401);
+	}
 }
 
-export { authMiddleware }
+export { authMiddleware };
