@@ -1,7 +1,7 @@
 import { connection } from '../db/db.js';
-import jwt from 'jsonwebtoken'
+import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
-dotenv.config()
+dotenv.config();
 
 async function authMiddleware(req, res, next) {
 	const { authorization } = req.headers;
@@ -11,12 +11,11 @@ async function authMiddleware(req, res, next) {
 		return res.sendStatus(400);
 	}
 
-	try{
-		const data = jwt.verify(token, process.env.JWT_SECRET)
-		
-	}catch(error){
-		console.log(error)
-		return res.status(401).send(error)
+	try {
+		const data = jwt.verify(token, process.env.JWT_SECRET);
+	} catch (error) {
+		console.log(error);
+		return res.status(401).send(error);
 	}
 
 	try {

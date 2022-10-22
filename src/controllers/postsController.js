@@ -1,6 +1,6 @@
 import { connection } from '../db/db.js';
 import { postSchema } from '../schemas/postSchema.js';
-import urlMetaData from "url-metadata";
+import urlMetaData from 'url-metadata';
 
 async function sendPost(req, res) {
 	const { link, content } = req.body;
@@ -79,17 +79,16 @@ async function sendPost(req, res) {
 }
 
 async function listPosts(req, res) {
-    
 	try {
-			const list = []
-			const query = await connection.query(`
-			SELECT posts.*, users.name, users.image FROM posts
+		const list = [];
+		const query = await connection.query(`
+			SELECT posts.*, users.name, users.image, users.id AS "userId" FROM posts
 					JOIN users ON posts."userId" = users.id
 					ORDER BY posts."id" DESC 
-					LIMIT 20`)
+					LIMIT 20`);
 
 			for(let i = 0 ; i < query.rows.length ; i++){
-					const metadata = await urlMetaData(query.rows[i].link)
+					const metadata = await urlMetaData(query.rows[i].link, {timeout: 20000, descriptionLength: 120})
 					list.push({
 							...query.rows[i],
 							urlInfos:{
@@ -103,9 +102,10 @@ async function listPosts(req, res) {
 			
 			res.send(list)
 
+		res.send(list);
 	} catch (error) {
-			console.log(error)
-			return res.sendStatus(500)
+		console.log(error);
+		return res.sendStatus(500);
 	}
 }
 
