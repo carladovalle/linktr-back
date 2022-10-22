@@ -12,6 +12,24 @@ async function getLikes (req, res) {
 	
 }
 
+async function getLikesQtd (req, res) { 
+	const { userId } = res.locals.session;
+	const { postId } = req.params;
+
+	try {
+		const likes = (await connection.query(`SELECT users.name as "likerName", likes."userIdLike" FROM users 
+		JOIN likes 
+		ON likes."userIdLike" = users.id
+		WHERE likes."postId" = $1;`, [postId])).rows;
+
+		const totalLikes = {likes, userId};
+		res.status(200).send(totalLikes);
+	} catch (error) {
+		return res.status(500).send(error);
+	}
+	
+}
+
 async function addLike(req, res) {
 	const { userId } = res.locals.session;
 	const { postId } = req.body;
@@ -42,4 +60,4 @@ async function removeLike(req, res) {
 	}
 }
 
-export { getLikes, addLike, removeLike };
+export { getLikes, getLikesQtd, addLike, removeLike };
