@@ -24,7 +24,7 @@ async function findPostByHashtag(req, res) {
 		const query = await connection.query(`
 			SELECT posts.*, users.name, users.image FROM posts 
             JOIN users ON posts."userId" = users.id
-            WHERE content LIKE $1 
+            WHERE content ILIKE $1 
             ORDER BY id desc 
             LIMIT 20`
             , [`%${hashtag}%`])

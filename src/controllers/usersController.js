@@ -33,7 +33,7 @@ async function getUserById(req, res) {
 			SELECT 
 				posts.*, users.name, users.image 
 			FROM posts
-			JOIN users 
+			RIGHT JOIN users 
 				ON posts."userId" = users.id
 			WHERE users.id = $1
 			ORDER BY posts."id" DESC 
@@ -41,6 +41,10 @@ async function getUserById(req, res) {
 			[id]
 		);
 		const list = [];
+
+		if (userPosts.rows[0].link === null) {
+			return res.status(200).send(userPosts.rows);
+		}
 
 		for (let i = 0; i < userPosts.rows.length; i++) {
 			const metadata = await urlMetaData(userPosts.rows[i].link);
@@ -57,6 +61,7 @@ async function getUserById(req, res) {
 
 		return res.status(200).send(list);
 	} catch (error) {
+		console.log(error);
 		return res.status(500).send(error.message);
 	}
 }
