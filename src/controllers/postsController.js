@@ -87,20 +87,20 @@ async function listPosts(req, res) {
 					ORDER BY posts."id" DESC 
 					LIMIT 20`);
 
-		for (let i = 0; i < query.rows.length; i++) {
-			const metadata = await urlMetaData(query.rows[i].link);
-			list.push({
-				...query.rows[i],
-				urlInfos: {
-					url: metadata.url,
-					title: metadata.title,
-					image: metadata.image,
-					description: metadata.description,
-				},
-			});
-		}
-
-		res.send(list);
+			for(let i = 0 ; i < query.rows.length ; i++){
+					const metadata = await urlMetaData(query.rows[i].link, {timeout: 20000, descriptionLength: 120})
+					list.push({
+							...query.rows[i],
+							urlInfos:{
+									url: metadata.url,
+									title: metadata.title,
+									image: metadata.image,
+									description: metadata.description
+							}
+					})
+			}
+			
+		res.send(list)
 	} catch (error) {
 		console.log(error);
 		return res.sendStatus(500);
