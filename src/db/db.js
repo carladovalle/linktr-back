@@ -10,19 +10,19 @@ const host = 'localhost';
 const port = 5432;
 const database = 'shortly';*/
 
-// const connection = new Pool({
-//   connectionString: process.env.DATABASE_URL,
-//   ssl:{
-//     rejectUnauthorized: false
-//   }
-// });
+ const connection = new Pool({
+   connectionString: process.env.DATABASE_URL,
+   ssl:{
+     rejectUnauthorized: false
+   }
+ });
 
-const connection = new Pool({
+/* const connection = new Pool({
 user : 'postgres',
 password : '03111999',
 host : 'localhost',
 port : 5432,
 database : 'linktr'
-});
+}); */
 
 export { connection }
