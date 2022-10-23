@@ -11,5 +11,4 @@ const { Pool } = pg
    }
  });
 
-
 export { connection }

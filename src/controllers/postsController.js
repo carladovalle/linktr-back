@@ -200,6 +200,8 @@ async function deletePost (req, res) {
 
         try {
 
+			await connection.query(`DELETE FROM likes WHERE "postId" = $1;`, [postId]);
+			await connection.query(`DELETE FROM "postsHashtags" WHERE "postId" = $1;`, [postId]);
             await connection.query(`DELETE FROM posts WHERE id = $1;`, [postId]);
     
             return res.sendStatus(200);
