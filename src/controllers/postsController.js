@@ -107,4 +107,115 @@ async function listPosts(req, res) {
 	}
 }
 
-export { sendPost, listPosts };
+function addSpaceHashtags(text){
+
+    if(text.includes('#')){
+        text = text.replace(/#/gi, ' #');
+        text = text.replace(/# /gi, '');
+        text = text.replace(/\s{2,}/g, ' ');
+        text = text.trim();
+    }
+    
+    return text;
+}
+
+async function editPost (req, res) {
+
+	const { link, content } = req.body;
+	const { postId } = req.params;
+	const validation = postSchema.validate(req.body);
+	const { session } = res.locals;
+	const contentResolve = addSpaceHashtags(content);
+
+	if (validation.error) {
+		const errors = validation.error.details
+			.map((error) => error.message)
+			.join('\n');
+		return res
+			.status(422)
+			.send(`The following errors an occurred:\n\n${errors}`);
+	}
+
+	const hashtagsHashtable = {};
+	content
+		.split(' ')
+		.filter((word) => word[0] === '#')
+		.forEach(
+			(element) => (hashtagsHashtable[element.toLowerCase()] = true)
+		);
+	let valuesString = '';
+	for (let i = 1; i <= Object.keys(hashtagsHashtable).length; i++) {
+		valuesString += `($${i}), `;
+	}
+	valuesString = valuesString.trim().replace(/.$/, '');
+	const hashtags = Object.keys(hashtagsHashtable);
+
+	try {
+
+		if (postId.length === 0) {
+			return res
+			.status(422)
+			.send(`The following errors an occurred:\n\nInvalid Id.`);
+		}
+
+		if (content) {
+
+			if (hashtags.length === 0) {
+				await connection.query(
+					`UPDATE posts SET link = $1, content = $2 WHERE id = $3;`, 
+					[link, content, postId]
+				);
+			}
+
+			await connection.query(`
+				UPDATE posts SET content = $1 WHERE id = $2`,
+				[contentResolve, postId]
+			);
+
+			await connection.query(`
+				INSERT INTO hashtags (hashtag) VALUES ($1) RETURNING id`,
+				[contentResolve]
+			);
+			
+			return res.sendStatus(200);
+
+		} else {
+			await connection.query(
+				`UPDATE posts SET link = $1, "userId" = $2;`, 
+				[link, session.userId]
+			);
+			res.statusSend(201);
+		}
+	} catch (error) {
+		return res.status(500).send(error.message);
+	}
+
+} 
+
+async function deletePost (req, res) {
+
+    const { postId } = req.params;
+
+    if (postId) {
+
+        try {
+
+            await connection.query(`DELETE FROM posts WHERE id = $1;`, [postId]);
+    
+            return res.sendStatus(200);
+    
+        } catch (error) {
+            return res
+				.status(422)
+				.send(error.message);
+        }
+
+    } else {
+        return res
+			.status(404)
+			.send(`The following errors an occurred:\n\nInvalid Id.`);
+    }
+
+}
+
+export { sendPost, listPosts, editPost, deletePost }
