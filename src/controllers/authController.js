@@ -1,6 +1,9 @@
 import { connection } from "../db/db.js"
 import { registerSchema, loginSchema } from "../schemas/authSchema.js"
 import { v4 as uuid } from "uuid"
+import jwt from "jsonwebtoken"
+import dotenv from 'dotenv'
+dotenv.config()
 import bcrypt from "bcrypt"
 
 async function register(req, res) {
@@ -26,11 +29,14 @@ async function register(req, res) {
     }
 }
 
-async function login(req, res) {
-    const token = uuid()
+async function login(req, res){
     const { email, password } = req.body
+    const secret = process.env.JWT_SECRET
+    const config = { expiresIn: 60*60 }
     const isValid = loginSchema.validate({ email, password })
     let userId
+
+    const token = jwt.sign({ email, password }, secret, config)
 
     if (isValid.error) {
         return res.sendStatus(422)
@@ -46,7 +52,8 @@ async function login(req, res) {
         }
 
     } catch (error) {
-        return res.sendStatus(500)
+        console.log(error)
+        return res.status(500).send(error)
     }
 
     try {
@@ -54,9 +61,8 @@ async function login(req, res) {
         return res.send({token})
     } catch (error) {
         console.log(error)
-        res.sendStatus(500)
+        return res.status(500).send(error)
     }
-    return res.sendStatus(200)
 }
 
 export { register, login }

@@ -5,28 +5,31 @@
 	"main": "index.js",
 	"type": "module",
 	"scripts": {
-	  "start": "npx nodemon src/index.js",
-	  "test": "echo \"Error: no test specified\" && exit 1"
+		"start": "npx nodemon src/index.js",
+		"test": "echo \"Error: no test specified\" && exit 1"
 	},
 	"repository": {
-	  "type": "git",
-	  "url": "git+https://github.com/Shizuke136/linktr-back.git"
+		"type": "git",
+		"url": "git+https://github.com/Shizuke136/linktr-back.git"
 	},
 	"author": "",
 	"license": "ISC",
 	"bugs": {
-	  "url": "https://github.com/Shizuke136/linktr-back/issues"
+		"url": "https://github.com/Shizuke136/linktr-back/issues"
 	},
 	"homepage": "https://github.com/Shizuke136/linktr-back#readme",
 	"dependencies": {
-	  "bcrypt": "^5.1.0",
-	  "cors": "^2.8.5",
-	  "dotenv": "^16.0.3",
-	  "express": "^4.18.2",
-	  "joi": "^17.6.3",
-	  "nodemon": "^2.0.20",
-	  "pg": "^8.8.0",
-	  "url-metadata": "^2.5.0",
-	  "uuid": "^9.0.0"
+		"bcrypt": "^5.1.0",
+		"cors": "^2.8.5",
+		"dotenv": "^16.0.3",
+		"express": "^4.18.2",
+		"joi": "^17.6.3",
+		"jsonwebtoken": "^8.5.1",
+		"pg": "^8.8.0",
+		"url-metadata": "^2.5.0",
+		"uuid": "^9.0.0"
+	},
+	"devDependencies": {
+		"nodemon": "^2.0.20"
 	}
-  }
+}

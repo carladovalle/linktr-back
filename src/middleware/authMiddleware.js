@@ -1,10 +1,21 @@
 import { connection } from '../db/db.js';
+import jwt from 'jsonwebtoken';
+import dotenv from 'dotenv';
+dotenv.config();
 
 async function authMiddleware(req, res, next) {
-	const token = req.headers.authorization?.replace('Bearer ', '');
+	const { authorization } = req.headers;
+    const token = authorization?.replace('Bearer ', '');
 
 	if (!token) {
 		return res.sendStatus(400);
+	}
+
+	try {
+		const data = jwt.verify(token, process.env.JWT_SECRET);
+	} catch (error) {
+		console.log(error);
+		return res.status(401).send(error);
 	}
 
 	try {
@@ -20,7 +31,6 @@ async function authMiddleware(req, res, next) {
 		res.locals.session = session.rows[0];
 		next();
 	} catch (error) {
-		console.log(error);
 		return res.sendStatus(401);
 	}
 }

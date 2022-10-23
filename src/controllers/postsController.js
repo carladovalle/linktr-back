@@ -1,6 +1,6 @@
 import { connection } from '../db/db.js';
 import { postSchema } from '../schemas/postSchema.js';
-import urlMetaData from "url-metadata";
+import urlMetaData from 'url-metadata';
 
 async function sendPost(req, res) {
 	const { link, content } = req.body;
@@ -79,17 +79,16 @@ async function sendPost(req, res) {
 }
 
 async function listPosts(req, res) {
-    
 	try {
-			const list = []
-			const query = await connection.query(`
-			SELECT posts.*, users.name, users.image FROM posts
+		const list = [];
+		const query = await connection.query(`
+			SELECT posts.*, users.name, users.image, users.id AS "userId" FROM posts
 					JOIN users ON posts."userId" = users.id
 					ORDER BY posts."id" DESC 
-					LIMIT 20`)
+					LIMIT 20`);
 
 			for(let i = 0 ; i < query.rows.length ; i++){
-					const metadata = await urlMetaData(query.rows[i].link)
+					const metadata = await urlMetaData(query.rows[i].link, {timeout: 20000, descriptionLength: 120})
 					list.push({
 							...query.rows[i],
 							urlInfos:{
@@ -101,12 +100,23 @@ async function listPosts(req, res) {
 					})
 			}
 			
-			res.send(list)
-
+		res.send(list)
 	} catch (error) {
-			console.log(error)
-			return res.sendStatus(500)
+		console.log(error);
+		return res.sendStatus(500);
 	}
+}
+
+function addSpaceHashtags(text){
+
+    if(text.includes('#')){
+        text = text.replace(/#/gi, ' #');
+        text = text.replace(/# /gi, '');
+        text = text.replace(/\s{2,}/g, ' ');
+        text = text.trim();
+    }
+    
+    return text;
 }
 
 async function editPost (req, res) {
@@ -115,6 +125,7 @@ async function editPost (req, res) {
 	const { postId } = req.params;
 	const validation = postSchema.validate(req.body);
 	const { session } = res.locals;
+	const contentResolve = addSpaceHashtags(content);
 
 	if (validation.error) {
 		const errors = validation.error.details
@@ -125,20 +136,47 @@ async function editPost (req, res) {
 			.send(`The following errors an occurred:\n\n${errors}`);
 	}
 
+	const hashtagsHashtable = {};
+	content
+		.split(' ')
+		.filter((word) => word[0] === '#')
+		.forEach(
+			(element) => (hashtagsHashtable[element.toLowerCase()] = true)
+		);
+	let valuesString = '';
+	for (let i = 1; i <= Object.keys(hashtagsHashtable).length; i++) {
+		valuesString += `($${i}), `;
+	}
+	valuesString = valuesString.trim().replace(/.$/, '');
+	const hashtags = Object.keys(hashtagsHashtable);
+
 	try {
 
 		if (postId.length === 0) {
 			return res
 			.status(422)
 			.send(`The following errors an occurred:\n\nInvalid Id.`);
-
 		}
 
 		if (content) {
-			await connection.query(
-				`UPDATE posts SET link = $1, content = $2 WHERE id = $3;`, 
-				[link, content, postId]);
 
+			if (hashtags.length === 0) {
+				await connection.query(
+					`UPDATE posts SET link = $1, content = $2 WHERE id = $3;`, 
+					[link, content, postId]
+				);
+			}
+
+			await connection.query(`
+				UPDATE posts SET content = $1 WHERE id = $2`,
+				[contentResolve, postId]
+			);
+
+			await connection.query(`
+				INSERT INTO hashtags (hashtag) VALUES ($1) RETURNING id`,
+				[contentResolve]
+			);
+			
 			return res.sendStatus(200);
 
 		} else {
@@ -153,93 +191,6 @@ async function editPost (req, res) {
 	}
 
 } 
-
-/*async function editPost (req, res) {
-
-	const { link, content } = req.body;
-	const { postId } = req.params;
-	const validation = postSchema.validate(req.body);
-	const { session } = res.locals;
-
-	if (validation.error) {
-		const errors = validation.error.details
-			.map((error) => error.message)
-			.join('\n');
-		return res
-			.status(422)
-			.send(`The following errors an occurred:\n\n${errors}`);
-	}
-
-	try {
-
-		if (postId.length === 0) {
-			return res
-			.status(422)
-			.send(`The following errors an occurred:\n\nInvalid Id.`);
-		}
-
-		if (content) {
-			const hashtagsHashtable = {};
-			content
-				.split(' ')
-				.filter((word) => word[0] === '#')
-				.forEach(
-					(element) => (hashtagsHashtable[element.toLowerCase()] = true)
-				);
-			let valuesString = '';
-			for (let i = 1; i <= Object.keys(hashtagsHashtable).length; i++) {
-				valuesString += `($${i}), `;
-			}
-			valuesString = valuesString.trim().replace(/.$/, '');
-			const hashtags = Object.keys(hashtagsHashtable);
-
-			if (hashtags.length === 0) {
-				await connection.query(`UPDATE posts SET link = $1, content = $2 WHERE id = $3;`, [link, content, postId]);
-
-				return res.sendStatus(201);
-			}
-
-			/*const insertedPostId = await connection.query(
-				//'UPDATE posts SET (content, link, "userId") VALUES ($1, $2, $3) RETURNING id',
-				//[content, link, session.userId]
-
-				`UPDATE posts SET content = $1, link = $2, "userId" = $3 WHERE "id" = $4 RETURNING id;`, [content, link, session.userId, id]
-			);
-			
-			const insertedHashtagsId = await connection.query(
-				//`UPDATE hashtags SET (hashtag) VALUES ${valuesString} RETURNING id`,
-				//hashtags
-
-				`UPDATE hashtags SET hashtag = $1 WHERE "id" = $1 RETURNING id;`, [hashtags]
-			);
-			
-			const hashtagsIdList = insertedHashtagsId.rows.map(
-				(element) => element.id
-			);
-			valuesString = '';
-			for (let i = 1; i <= hashtagsIdList.length; i++) {
-				valuesString += `($1, $${i + 1}), `;
-			}
-			valuesString = valuesString.trim().replace(/.$/, '');
-
-			await connection.query(
-				`UPDATE "postsHashtags" SET ("postId", "hashtagId") VALUES ${valuesString}`,
-				[insertedPostId.rows[0].id, ...hashtagsIdList]
-			);  
-
-			res.sendStatus(200);
-		} else {
-			await connection.query(
-				`UPDATE posts SET link = $1, "userId" = $2;`, 
-				[link, session.userId]
-			);
-			res.statusSend(201);
-		}
-	} catch (error) {
-		return res.status(500).send(error.message);
-	}
-
-} */
 
 async function deletePost (req, res) {
 
