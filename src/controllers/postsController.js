@@ -71,7 +71,7 @@ async function sendPost(req, res) {
 				'INSERT INTO posts (link, "userId") VALUES($1, $2)',
 				[link, session.userId]
 			);
-			res.statusSend(201);
+			res.sendStatus(201);
 		}
 	} catch (error) {
 		return res.status(500).send(error.message);
