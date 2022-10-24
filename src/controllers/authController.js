@@ -88,7 +88,7 @@ async function allowUserAccess(req, res) {
 		const user = await connection.query(
 			`
 			SELECT 
-				users.name, users.image
+				users.name, users.image, users.id
 			FROM sessions
 			JOIN users
 				ON sessions."userId" = users.id
