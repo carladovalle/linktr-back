@@ -121,11 +121,23 @@ function addSpaceHashtags(text){
 
 async function editPost (req, res) {
 
+	const { userId } = res.locals.session;
 	const { link, content } = req.body;
 	const { postId } = req.params;
 	const validation = postSchema.validate(req.body);
 	const { session } = res.locals;
 	const contentResolve = addSpaceHashtags(content);
+
+	try {
+
+		const postInfo = (await connection.query(`SELECT * FROM posts WHERE id = $1;`, [postId])).rows[0];
+		if (postInfo.userId !== userId) {
+			return res.status(401).send("post made by another user.");
+		}	  
+		
+	} catch (error) {
+		return res.status(400).send("can't verify posts user.")
+	}
 
 	if (validation.error) {
 		const errors = validation.error.details
@@ -152,7 +164,7 @@ async function editPost (req, res) {
 
 	try {
 
-		if (postId.length === 0) {
+		if (!postId) {
 			return res
 			.status(422)
 			.send(`The following errors an occurred:\n\nInvalid Id.`);
@@ -194,11 +206,17 @@ async function editPost (req, res) {
 
 async function deletePost (req, res) {
 
-    const { postId } = req.params;
+    const { userId } = res.locals.session;
+	const { postId } = req.params;
 
     if (postId) {
 
         try {
+
+			const postInfo = (await connection.query(`SELECT * FROM posts WHERE id = $1;`, [postId])).rows[0];
+			if (postInfo.userId !== userId) {
+				return res.status(401).send("post made by another user.");
+			}  
 
 			await connection.query(`DELETE FROM likes WHERE "postId" = $1;`, [postId]);
 			await connection.query(`DELETE FROM "postsHashtags" WHERE "postId" = $1;`, [postId]);
