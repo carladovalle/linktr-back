@@ -8,7 +8,6 @@ async function publishPost(content, link, userId) {
 }
 
 async function addHashtag(hashtags, valuesString) {
-	console.log(hashtags, valuesString);
 	return connection.query(
 		`INSERT INTO hashtags (hashtag) VALUES ${valuesString} RETURNING id`,
 		hashtags
@@ -54,13 +53,6 @@ async function updateContent(contentResolve, postId) {
 		postId,
 	]);
 }
-
-// async function updateHashtags(contentResolve) {
-// 	return connection.query(`
-// 	INSERT INTO hashtags (hashtag) VALUES ($1) RETURNING id`,
-// 	[contentResolve]
-// );
-// }
 
 async function deleteLikeData(postId) {
 	return connection.query(`DELETE FROM likes WHERE "postId" = $1;`, [postId]);
