@@ -1,10 +1,9 @@
-import { connection } from '../db/db.js';
 import { registerSchema, loginSchema } from '../schemas/authSchema.js';
-import { v4 as uuid } from 'uuid';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 dotenv.config();
 import bcrypt from 'bcrypt';
+import { createNewSession, createUser, searchUserByEmail, validateUserToken } from '../repositories/authRepository.js';
 
 async function register(req, res) {
 	let { name, username, email, password, image } = req.body;
@@ -23,10 +22,7 @@ async function register(req, res) {
 	password = bcrypt.hashSync(password, 10);
 
 	try {
-		const query = await connection.query(
-			'INSERT INTO users (name, username, email, password, image) VALUES ($1,$2,$3,$4, $5);',
-			[name, username, email, password, image]
-		);
+		await createUser({...req.body, password})
 		return res.sendStatus(201);
 	} catch (error) {
 		if (error.code === '23505') {
@@ -51,10 +47,7 @@ async function login(req, res) {
 	}
 
 	try {
-		const query = await connection.query(
-			'SELECT * FROM users WHERE email = $1;',
-			[email]
-		);
+		const query = await searchUserByEmail(email)
 		const isPasswordValid = bcrypt.compareSync(
 			password,
 			query.rows[0].password
@@ -70,10 +63,7 @@ async function login(req, res) {
 	}
 
 	try {
-		const query = await connection.query(
-			'INSERT INTO sessions (token,"userId") VALUES ($1, $2);',
-			[token, userId]
-		);
+		await createNewSession(token, userId)
 		return res.send({ token });
 	} catch (error) {
 		console.log(error);
@@ -85,18 +75,7 @@ async function allowUserAccess(req, res) {
 	const { session } = res.locals;
 
 	try {
-		const user = await connection.query(
-			`
-			SELECT 
-				users.name, users.image, users.id
-			FROM sessions
-			JOIN users
-				ON sessions."userId" = users.id
-			WHERE sessions.token = $1
-			`,
-			[session.token]
-		);
-
+		const user = await validateUserToken(session.token)
 		return res.status(200).send(user.rows[0]);
 	} catch (error) {
 		console.log(error.message);
