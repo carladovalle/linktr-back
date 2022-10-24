@@ -30,7 +30,7 @@ async function findPostByHashtag(req, res) {
             , [`%${hashtag}%`])
 
             for(let i = 0 ; i < query.rows.length ; i++){
-                const metadata = await urlMetaData(query.rows[i].link)
+                const metadata = await urlMetaData(query.rows[i].link, {timeout: 20000, descriptionLength: 120})
                 list.push({
                         ...query.rows[i],
                         urlInfos:{
