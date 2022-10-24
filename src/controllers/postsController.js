@@ -128,10 +128,16 @@ async function editPost (req, res) {
 	const { session } = res.locals;
 	const contentResolve = addSpaceHashtags(content);
 
-	const postInfo = (await connection.query(`SELECT * FROM posts WHERE id = $1;`, [postId])).rows[0];
-	if (postInfo.userId !== userId) {
-		return res.status(401).send("post made by another user.");
-	}  
+	try {
+
+		const postInfo = (await connection.query(`SELECT * FROM posts WHERE id = $1;`, [postId])).rows[0];
+		if (postInfo.userId !== userId) {
+			return res.status(401).send("post made by another user.");
+		}	  
+		
+	} catch (error) {
+		return res.status(400).send("can't verify posts user.")
+	}
 
 	if (validation.error) {
 		const errors = validation.error.details
