@@ -5,7 +5,7 @@ const postSchema = joi.object({
 		.string()
 		.pattern(/(^|\s)((https?:\/\/)[\w-]+(\.[\w-]+)+\.?(:\d+)?(\/\S*)?)/)
 		.required(),
-	content: joi.string(),
+	content: joi.string().min(0),
 });
 
 export { postSchema };

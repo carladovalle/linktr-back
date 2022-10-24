@@ -125,7 +125,6 @@ async function editPost (req, res) {
 	const { link, content } = req.body;
 	const { postId } = req.params;
 	const validation = postSchema.validate(req.body);
-	const { session } = res.locals;
 	const contentResolve = addSpaceHashtags(content);
 
 	try {
@@ -149,18 +148,18 @@ async function editPost (req, res) {
 	}
 
 	const hashtagsHashtable = {};
-	content
-		.split(' ')
-		.filter((word) => word[0] === '#')
-		.forEach(
-			(element) => (hashtagsHashtable[element.toLowerCase()] = true)
-		);
-	let valuesString = '';
-	for (let i = 1; i <= Object.keys(hashtagsHashtable).length; i++) {
-		valuesString += `($${i}), `;
-	}
-	valuesString = valuesString.trim().replace(/.$/, '');
-	const hashtags = Object.keys(hashtagsHashtable);
+			content
+				.split(' ')
+				.filter((word) => word[0] === '#')
+				.forEach(
+					(element) => (hashtagsHashtable[element.toLowerCase()] = true)
+				);
+			let valuesString = '';
+			for (let i = 1; i <= Object.keys(hashtagsHashtable).length; i++) {
+				valuesString += `($${i}), `;
+			}
+			valuesString = valuesString.trim().replace(/.$/, '');
+			const hashtags = Object.keys(hashtagsHashtable);
 
 	try {
 
@@ -170,34 +169,26 @@ async function editPost (req, res) {
 			.send(`The following errors an occurred:\n\nInvalid Id.`);
 		}
 
-		if (content) {
-
-			if (hashtags.length === 0) {
-				await connection.query(
-					`UPDATE posts SET link = $1, content = $2 WHERE id = $3;`, 
-					[link, content, postId]
-				);
-			}
-
-			await connection.query(`
-				UPDATE posts SET content = $1 WHERE id = $2`,
-				[contentResolve, postId]
-			);
-
-			await connection.query(`
-				INSERT INTO hashtags (hashtag) VALUES ($1) RETURNING id`,
-				[contentResolve]
-			);
-			
-			return res.sendStatus(200);
-
-		} else {
+		if (hashtags.length === 0) {
 			await connection.query(
-				`UPDATE posts SET link = $1, "userId" = $2;`, 
-				[link, session.userId]
+				`UPDATE posts SET link = $1, content = $2 WHERE id = $3;`, 
+				[link, content, postId]
 			);
-			res.statusSend(201);
+			return res.sendStatus(200)
 		}
+		
+		await connection.query(`
+			UPDATE posts SET content = $1 WHERE id = $2`,
+			[contentResolve, postId]
+		);
+
+		await connection.query(`
+			INSERT INTO hashtags (hashtag) VALUES ($1) RETURNING id`,
+			[contentResolve]
+		);
+		
+		return res.sendStatus(200);
+		
 	} catch (error) {
 		return res.status(500).send(error.message);
 	}
