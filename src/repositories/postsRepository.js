@@ -22,18 +22,28 @@ async function insertIntoMiddleTable(valuesString, id, hashtagsIdList) {
 }
 
 async function publishPostWithoutContent(link, userId) {
-	return connection.query('INSERT INTO posts (link, "userId") VALUES($1, $2)', [
-		link,
-		userId,
-	]);
+	return connection.query(
+		'INSERT INTO posts (link, "userId") VALUES($1, $2) RETURNING id',
+		[link, userId]
+	);
 }
 
 async function listAllPosts() {
 	return connection.query(`
-		SELECT posts.*, users.name, users.image, users.id AS "userId" FROM posts
-				JOIN users ON posts."userId" = users.id
-				ORDER BY posts."id" DESC 
-				LIMIT 20`);
+		SELECT 
+			posts.*,
+			users.name,
+			users.image,
+			users.id AS "userId",
+			json_build_object('url', metadatas.url, 'title', metadatas.title, 'image', metadatas.image, 'description', metadatas.description) AS "urlInfos"
+		FROM posts
+		JOIN users 
+			ON posts."userId" = users.id
+		JOIN metadatas 
+			ON posts.id = metadatas."postId"
+		ORDER BY posts."id" DESC
+		LIMIT 20
+		`);
 }
 
 async function findPost(postId) {
@@ -68,6 +78,13 @@ async function deletePostData(postId) {
 	return connection.query(`DELETE FROM posts WHERE id = $1;`, [postId]);
 }
 
+async function insertMetadata({ url, title, image, description }, id) {
+	return connection.query(
+		'INSERT INTO metadatas (url, title, image, description, "postId") VALUES($1, $2, $3, $4, $5)',
+		[url, title, image, description, id]
+	);
+}
+
 export {
 	publishPost,
 	addHashtag,
@@ -80,4 +97,5 @@ export {
 	deleteLikeData,
 	deleteMiddleTableData,
 	deletePostData,
+	insertMetadata
 };
