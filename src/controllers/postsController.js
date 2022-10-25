@@ -1,6 +1,6 @@
 import { postSchema } from '../schemas/postSchema.js';
 import urlMetaData from 'url-metadata';
-import { addHashtag, deleteLikeData, deleteMiddleTableData, deletePostData, findPost, insertIntoMiddleTable, listAllPosts, publishPost, publishPostWithoutContent, updateContent, updateLinkAndContent } from '../repositories/postsRepository.js';
+import { addHashtag, deleteLikeData, deleteMiddleTableData, deletePostData, findPost, insertIntoMiddleTable, insertMetadata, listAllPosts, publishPost, publishPostWithoutContent, updateContent, updateLinkAndContent } from '../repositories/postsRepository.js';
 
 async function sendPost(req, res) {
 	const { link, content } = req.body;
@@ -17,6 +17,11 @@ async function sendPost(req, res) {
 	}
 
 	try {
+		const metadata = await urlMetaData(link, {
+			timeout: 20000,
+			descriptionLength: 120,
+		});
+
 		if (content) {
 			const hashtagsHashtable = {};
 			content
@@ -33,7 +38,9 @@ async function sendPost(req, res) {
 			const hashtags = Object.keys(hashtagsHashtable);
 
 			if (hashtags.length === 0) {
-				await publishPost(content, link, session.userId)
+				const insertPost = await publishPost(content, link, session.userId)
+				await insertMetadata(metadata, insertPost.rows[0].id)
+
 				return res.sendStatus(201);
 			}
 
@@ -41,6 +48,8 @@ async function sendPost(req, res) {
 
 			const insertedHashtagsId = await addHashtag(hashtags, valuesString)
 
+			await insertMetadata(metadata, insertedPostId.rows[0].id)
+			
 			const hashtagsIdList = insertedHashtagsId.rows.map(
 				(element) => element.id
 			);
@@ -54,7 +63,8 @@ async function sendPost(req, res) {
 
 			res.sendStatus(201);
 		} else {
-			await publishPostWithoutContent(link, session.userId)
+			const insertedPostId = await publishPostWithoutContent(link, session.userId);
+			await insertMetadata(metadata, insertedPostId.rows[0].id);
 			res.sendStatus(201);
 		}
 	} catch (error) {
@@ -64,22 +74,8 @@ async function sendPost(req, res) {
 
 async function listPosts(req, res) {
 	try {
-		const list = [];
 		const query = await listAllPosts()
-			for(let i = 0 ; i < query.rows.length ; i++){
-					const metadata = await urlMetaData(query.rows[i].link, {timeout: 20000, descriptionLength: 120})
-					list.push({
-							...query.rows[i],
-							urlInfos:{
-									url: metadata.url,
-									title: metadata.title,
-									image: metadata.image,
-									description: metadata.description
-							}
-					})
-			}
-			
-		res.send(list)
+		res.send(query.rows)
 	} catch (error) {
 		console.log(error);
 		return res.sendStatus(500);
