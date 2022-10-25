@@ -1,11 +1,11 @@
-import { connection } from '../db/db.js';
+import { deleteLike, getTotalLikes, getUserLikes, likePost } from '../repositories/likesRepository.js';
 
 async function getLikes (req, res) { 
 	const { userId } = res.locals.session;
 
 	try {
-		const likes = (await connection.query(`SELECT * FROM likes WHERE "userIdLike" = $1`, [userId])).rows;
-		res.status(200).send(likes);
+		const likes = await getUserLikes(userId)
+		res.status(200).send(likes.rows);
 	} catch (error) {
 		return res.status(500).send(error);
 	}
@@ -17,12 +17,8 @@ async function getLikesQtd (req, res) {
 	const { postId } = req.params;
 
 	try {
-		const likes = (await connection.query(`SELECT users.name as "likerName", likes."userIdLike" FROM users 
-		JOIN likes 
-		ON likes."userIdLike" = users.id
-		WHERE likes."postId" = $1;`, [postId])).rows;
-
-		const totalLikes = {likes, userId};
+		const likes = await getTotalLikes(postId)
+		const totalLikes = {likes: likes.rows, userId};
 		res.status(200).send(totalLikes);
 	} catch (error) {
 		return res.status(500).send(error);
@@ -35,10 +31,7 @@ async function addLike(req, res) {
 	const { postId } = req.body;
 
 	try {
-		await connection.query(
-			`INSERT INTO likes ("userIdLike", "postId") VALUES ($1, $2);`,
-			[userId, postId]
-		);
+		await likePost(userId, postId)
 		return res.status(200).send('like added');
 	} catch (error) {
 		return res.status(500).send(error);
@@ -50,10 +43,7 @@ async function removeLike(req, res) {
 	const { postId } = req.params;
 
 	try {
-		await connection.query(
-			`DELETE FROM likes WHERE "userIdLike" = $1 AND "postId" = $2;`,
-			[userId, postId]
-		);
+		await deleteLike(userId, postId)
 		return res.status(200).send('like removed');
 	} catch (error) {
 		return res.status(500).send(error);

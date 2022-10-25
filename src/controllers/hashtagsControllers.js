@@ -1,13 +1,9 @@
-import { connection } from '../db/db.js';
 import urlMetaData from "url-metadata";
+import { getHashtags, listHashtagPosts } from '../repositories/hashtagsRepository.js';
 
 async function listHashtags(req, res) {
 	try {
-			const query = await connection.query(`
-			SELECT hashtag, COUNT(hashtag) FROM hashtags GROUP BY "hashtag" 
-            ORDER BY COUNT DESC
-            LIMIT 10`)
-			
+			const query = await getHashtags();
 			res.send(query.rows)
 
 	} catch (error) {
@@ -21,14 +17,7 @@ async function findPostByHashtag(req, res) {
     const list = []
 
 	try {
-		const query = await connection.query(`
-			SELECT posts.*, users.name, users.image FROM posts 
-            JOIN users ON posts."userId" = users.id
-            WHERE content ILIKE $1 
-            ORDER BY id desc 
-            LIMIT 20`
-            , [`%${hashtag}%`])
-
+		const query = await listHashtagPosts(hashtag)
             for(let i = 0 ; i < query.rows.length ; i++){
                 const metadata = await urlMetaData(query.rows[i].link, {timeout: 20000, descriptionLength: 120})
                 list.push({
