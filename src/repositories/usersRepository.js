@@ -26,6 +26,7 @@ async function listUserPosts(id) {
 		RIGHT JOIN users 
 			ON posts."userId" = users.id
 		WHERE users.id = $1
+		GROUP BY posts.id, users.name, users.image, users.id, metadatas.url, metadatas.title, metadatas.image, metadatas.description
 		ORDER BY posts."id" DESC
 		LIMIT 20`,
 		[Number(id)]

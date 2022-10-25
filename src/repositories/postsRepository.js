@@ -41,6 +41,7 @@ async function listAllPosts() {
 			ON posts."userId" = users.id
 		JOIN metadatas 
 			ON posts.id = metadatas."postId"
+		GROUP BY posts.id, users.name, users.image, users.id, metadatas.url, metadatas.title, metadatas.image, metadatas.description
 		ORDER BY posts."id" DESC
 		LIMIT 20
 		`);
@@ -97,5 +98,5 @@ export {
 	deleteLikeData,
 	deleteMiddleTableData,
 	deletePostData,
-	insertMetadata
+	insertMetadata,
 };

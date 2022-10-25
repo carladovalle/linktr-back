@@ -21,6 +21,7 @@ async function listHashtagPosts(hashtag) {
 		JOIN metadatas 
 			ON posts.id = metadatas."postId"
 		WHERE posts.content ILIKE $1
+		GROUP BY posts.id, users.name, users.image, users.id, metadatas.url, metadatas.title, metadatas.image, metadatas.description
 		ORDER BY posts."id" DESC
 		LIMIT 20`,
 		[`%${hashtag}%`]
