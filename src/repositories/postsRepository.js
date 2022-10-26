@@ -28,7 +28,7 @@ async function publishPostWithoutContent(link, userId) {
 	);
 }
 
-async function listAllPosts() {
+async function listAllPosts(offset, limit) {
 	return connection.query(`
 		SELECT 
 			posts.*,
@@ -43,8 +43,9 @@ async function listAllPosts() {
 			ON posts.id = metadatas."postId"
 		GROUP BY posts.id, users.name, users.image, users.id, metadatas.url, metadatas.title, metadatas.image, metadatas.description
 		ORDER BY posts."id" DESC
-		LIMIT 20
-		`);
+		LIMIT $1
+		OFFSET $2	
+		`,[limit, offset]);
 }
 
 async function findPost(postId) {
@@ -70,9 +71,14 @@ async function deleteLikeData(postId) {
 }
 
 async function deleteMiddleTableData(postId) {
-	return connection.query(`DELETE FROM "postsHashtags" WHERE "postId" = $1;`, [
-		postId,
-	]);
+	return connection.query(
+		`DELETE FROM "postsHashtags" WHERE "postId" = $1 RETURNING "hashtagId";`,
+		[postId]
+	);
+}
+
+async function deleteHashtagData(ids, string) {
+	return connection.query(`DELETE FROM hashtags WHERE id IN (${string});`, ids);
 }
 
 async function deletePostData(postId) {
@@ -103,5 +109,6 @@ export {
 	deleteMiddleTableData,
 	deletePostData,
 	insertMetadata,
-	getLastPostId
+	getLastPostId,
+	deleteHashtagData,
 };
