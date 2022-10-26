@@ -11,7 +11,18 @@ async function getCommentData(postId) {
     return connection.query(
         `SELECT * FROM comments WHERE "postId" = $1;`,
         [postId]
-    )
+    );
 }
 
-export { createCommentData, getCommentData }
+async function getCommentQtdData(postId) {
+    return connection.query(
+		`SELECT posts.content, comments."postId"
+        FROM posts 
+        JOIN comments 
+        ON comments."postId" = posts.id
+        WHERE comments."postId" = $1;`,
+		[postId]
+    );
+}
+
+export { createCommentData, getCommentData, getCommentQtdData}

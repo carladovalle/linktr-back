@@ -1,4 +1,4 @@
-import { createCommentData, getCommentData } from '../repositories/commentsRepository.js';
+import { createCommentData, getCommentData, getCommentQtdData } from '../repositories/commentsRepository.js';
 
 async function createComment (req, res) {
 
@@ -28,4 +28,18 @@ async function getComment (req, res) {
 
 }
 
-export { createComment, getComment }
+async function getCommentsQtd (req, res) { 
+	const { userId } = res.locals.session;
+	const { postId } = req.params;
+
+	try {
+		const comments = await getCommentQtdData(postId)
+		const totalComments = {comments: comments.rows, postId};
+		res.status(200).send(totalComments);
+	} catch (error) {
+		return res.status(500).send(error);
+	}
+	
+}
+
+export { createComment, getComment, getCommentsQtd }
