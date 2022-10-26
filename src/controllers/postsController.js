@@ -73,8 +73,9 @@ async function sendPost(req, res) {
 }
 
 async function listPosts(req, res) {
+	const { offset, limit } = req.query
 	try {
-		const query = await listAllPosts()
+		const query = await listAllPosts(offset, limit)
 		res.send(query.rows)
 	} catch (error) {
 		console.log(error);
