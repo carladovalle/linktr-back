@@ -7,4 +7,11 @@ async function createCommentData(userId, postId, text) {
     );
 }
 
-export { createCommentData }
+async function getCommentData(postId) {
+    return connection.query(
+        `SELECT * FROM comments WHERE "postId" = $1;`,
+        [postId]
+    )
+}
+
+export { createCommentData, getCommentData }

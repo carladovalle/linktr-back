@@ -1,4 +1,4 @@
-import { createCommentData } from '../repositories/commentsRepository.js';
+import { createCommentData, getCommentData } from '../repositories/commentsRepository.js';
 
 async function createComment (req, res) {
 
@@ -15,4 +15,17 @@ async function createComment (req, res) {
 
 }
 
-export { createComment }
+async function getComment (req, res) {
+
+    const { postId } = req.params;
+
+    try {
+        const comments = await getCommentData(postId);
+        return res.status(200).send(comments.rows);
+    } catch (error) {
+		return res.status(500).send(error);
+	}
+
+}
+
+export { createComment, getComment }
