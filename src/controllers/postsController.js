@@ -122,20 +122,6 @@ async function editPost (req, res) {
 			.send(`The following errors an occurred:\n\n${errors}`);
 	}
 
-	const hashtagsHashtable = {};
-			content
-				.split(' ')
-				.filter((word) => word[0] === '#')
-				.forEach(
-					(element) => (hashtagsHashtable[element.toLowerCase()] = true)
-				);
-			let valuesString = '';
-			for (let i = 1; i <= Object.keys(hashtagsHashtable).length; i++) {
-				valuesString += `($${i}), `;
-			}
-			valuesString = valuesString.trim().replace(/.$/, '');
-			const hashtags = Object.keys(hashtagsHashtable);
-
 	try {
 
 		if (!postId) {
@@ -144,6 +130,32 @@ async function editPost (req, res) {
 			.send(`The following errors an occurred:\n\nInvalid Id.`);
 		}
 
+		const idsRelation = await deleteMiddleTableData(postId)
+		const hashtagsIdList = idsRelation.rows.map(value => value.hashtagId)
+	
+		if (hashtagsIdList.length > 0){
+			let queryString = ""
+			for (let i = 1; i <= hashtagsIdList.length; i++) {
+				queryString += `$${i}, `;
+			}
+			queryString = queryString.trim().replace(/.$/, '');
+			await deleteHashtagData(hashtagsIdList, queryString)
+		}
+
+		const hashtagsHashtable = {};
+		content
+			.split(' ')
+			.filter((word) => word[0] === '#')
+			.forEach(
+				(element) => (hashtagsHashtable[element.toLowerCase()] = true)
+			);
+		let valuesString = '';
+		for (let i = 1; i <= Object.keys(hashtagsHashtable).length; i++) {
+			valuesString += `($${i}), `;
+		}
+		valuesString = valuesString.trim().replace(/.$/, '');
+		const hashtags = Object.keys(hashtagsHashtable);
+
 		if (hashtags.length === 0) {
 			await updateLinkAndContent(link, content, postId)
 			return res.sendStatus(200)
@@ -151,7 +163,17 @@ async function editPost (req, res) {
 		
 		await updateContent(contentResolve, postId)
 
-		await addHashtag([contentResolve], "($1)")
+		const addedHashtags = await addHashtag(hashtags, valuesString)
+		const newHashtagsIds = addedHashtags.rows.map(value => value.id)
+
+		let middleTableString = '';
+			for (let i = 1; i <= newHashtagsIds.length; i++) {
+				middleTableString += `($1, $${i + 1}), `;
+			}
+			middleTableString = middleTableString.trim().replace(/.$/, '');
+			
+
+		await insertIntoMiddleTable(middleTableString, postId, newHashtagsIds);
 		
 		return res.sendStatus(200);
 		
@@ -177,7 +199,7 @@ async function deletePost (req, res) {
 		await deleteLikeData(postId)
 		const idsRelation = await deleteMiddleTableData(postId)
 		await deletePostData(postId)
-		const hashtagsIdList = idsRelation.rows.map(value => value.id)
+		const hashtagsIdList = idsRelation.rows.map(value => value.hashtagId)
 
 		if (hashtagsIdList.length > 0){
 			let valuesString = ""

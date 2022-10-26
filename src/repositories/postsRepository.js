@@ -71,7 +71,7 @@ async function deleteLikeData(postId) {
 
 async function deleteMiddleTableData(postId) {
 	return connection.query(
-		`DELETE FROM "postsHashtags" WHERE "postId" = $1 RETURNING id;`,
+		`DELETE FROM "postsHashtags" WHERE "postId" = $1 RETURNING "hashtagId";`,
 		[postId]
 	);
 }
