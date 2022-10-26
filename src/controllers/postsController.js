@@ -1,6 +1,7 @@
 import { postSchema } from '../schemas/postSchema.js';
 import urlMetaData from 'url-metadata';
-import { addHashtag, deleteLikeData, deleteHashtagData, deleteMiddleTableData, deletePostData, findPost, insertIntoMiddleTable, insertMetadata, listAllPosts, publishPost, publishPostWithoutContent, updateContent, updateLinkAndContent } from '../repositories/postsRepository.js';
+import { addHashtag, deleteLikeData, deleteHashtagData, deleteMiddleTableData, deletePostData, findPost, insertIntoMiddleTable, insertMetadata, listAllPosts, publishPost, publishPostWithoutContent, updateContent, updateLinkAndContent, getLastPostId } from '../repositories/postsRepository.js';
+
 
 async function sendPost(req, res) {
 	const { link, content } = req.body;
@@ -227,4 +228,17 @@ async function deletePost (req, res) {
 
 }
 
-export { sendPost, listPosts, editPost, deletePost }
+async function haveNewPost(req, res){
+	try{
+		const checkUpdate = await getLastPostId()
+		return res
+			.status(200)
+			.send({id:checkUpdate.rows[0].id})
+	}catch(error){
+		console.log(error)
+		return res
+			.sendStatus(500)
+	}
+}
+
+export { sendPost, listPosts, editPost, deletePost, haveNewPost }

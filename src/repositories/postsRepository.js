@@ -92,6 +92,10 @@ async function insertMetadata({ url, title, image, description }, id) {
 	);
 }
 
+async function getLastPostId(){
+	return connection.query("SELECT * FROM posts ORDER BY id DESC LIMIT 1;")
+}
+
 export {
 	publishPost,
 	addHashtag,
@@ -105,5 +109,6 @@ export {
 	deleteMiddleTableData,
 	deletePostData,
 	insertMetadata,
+	getLastPostId,
 	deleteHashtagData,
 };
