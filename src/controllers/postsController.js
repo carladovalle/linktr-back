@@ -1,6 +1,6 @@
 import { postSchema } from '../schemas/postSchema.js';
 import urlMetaData from 'url-metadata';
-import { addHashtag, deleteLikeData, deleteMiddleTableData, deletePostData, findPost, insertIntoMiddleTable, insertMetadata, listAllPosts, publishPost, publishPostWithoutContent, updateContent, updateLinkAndContent } from '../repositories/postsRepository.js';
+import { addHashtag, deleteLikeData, deleteHashtagData, deleteMiddleTableData, deletePostData, findPost, insertIntoMiddleTable, insertMetadata, listAllPosts, publishPost, publishPostWithoutContent, updateContent, updateLinkAndContent } from '../repositories/postsRepository.js';
 
 async function sendPost(req, res) {
 	const { link, content } = req.body;
@@ -123,20 +123,6 @@ async function editPost (req, res) {
 			.send(`The following errors an occurred:\n\n${errors}`);
 	}
 
-	const hashtagsHashtable = {};
-			content
-				.split(' ')
-				.filter((word) => word[0] === '#')
-				.forEach(
-					(element) => (hashtagsHashtable[element.toLowerCase()] = true)
-				);
-			let valuesString = '';
-			for (let i = 1; i <= Object.keys(hashtagsHashtable).length; i++) {
-				valuesString += `($${i}), `;
-			}
-			valuesString = valuesString.trim().replace(/.$/, '');
-			const hashtags = Object.keys(hashtagsHashtable);
-
 	try {
 
 		if (!postId) {
@@ -145,6 +131,32 @@ async function editPost (req, res) {
 			.send(`The following errors an occurred:\n\nInvalid Id.`);
 		}
 
+		const idsRelation = await deleteMiddleTableData(postId)
+		const hashtagsIdList = idsRelation.rows.map(value => value.hashtagId)
+	
+		if (hashtagsIdList.length > 0){
+			let queryString = ""
+			for (let i = 1; i <= hashtagsIdList.length; i++) {
+				queryString += `$${i}, `;
+			}
+			queryString = queryString.trim().replace(/.$/, '');
+			await deleteHashtagData(hashtagsIdList, queryString)
+		}
+
+		const hashtagsHashtable = {};
+		content
+			.split(' ')
+			.filter((word) => word[0] === '#')
+			.forEach(
+				(element) => (hashtagsHashtable[element.toLowerCase()] = true)
+			);
+		let valuesString = '';
+		for (let i = 1; i <= Object.keys(hashtagsHashtable).length; i++) {
+			valuesString += `($${i}), `;
+		}
+		valuesString = valuesString.trim().replace(/.$/, '');
+		const hashtags = Object.keys(hashtagsHashtable);
+
 		if (hashtags.length === 0) {
 			await updateLinkAndContent(link, content, postId)
 			return res.sendStatus(200)
@@ -152,7 +164,17 @@ async function editPost (req, res) {
 		
 		await updateContent(contentResolve, postId)
 
-		await addHashtag([contentResolve], "($1)")
+		const addedHashtags = await addHashtag(hashtags, valuesString)
+		const newHashtagsIds = addedHashtags.rows.map(value => value.id)
+
+		let middleTableString = '';
+			for (let i = 1; i <= newHashtagsIds.length; i++) {
+				middleTableString += `($1, $${i + 1}), `;
+			}
+			middleTableString = middleTableString.trim().replace(/.$/, '');
+			
+
+		await insertIntoMiddleTable(middleTableString, postId, newHashtagsIds);
 		
 		return res.sendStatus(200);
 		
@@ -164,34 +186,44 @@ async function editPost (req, res) {
 
 async function deletePost (req, res) {
 
-    const { userId } = res.locals.session;
+	const { userId } = res.locals.session;
 	const { postId } = req.params;
 
-    if (postId) {
+	if (postId) {
 
-        try {
-			const postInfo = await findPost(postId);
-			if (postInfo.rows[0].userId !== userId) {
-				return res.status(401).send("post made by another user.");
-			}  
+			try {
+		const postInfo = await findPost(postId);
+		if (postInfo.rows[0].userId !== userId) {
+			return res.status(401).send("post made by another user.");
+		}  
 
-			await deleteLikeData(postId)
-			await deleteMiddleTableData(postId)
-            await deletePostData(postId)
-    
-            return res.sendStatus(200);
-    
-        } catch (error) {
-            return res
-				.status(422)
-				.send(error.message);
-        }
+		await deleteLikeData(postId)
+		const idsRelation = await deleteMiddleTableData(postId)
+		await deletePostData(postId)
+		const hashtagsIdList = idsRelation.rows.map(value => value.hashtagId)
 
-    } else {
-        return res
-			.status(404)
-			.send(`The following errors an occurred:\n\nInvalid Id.`);
-    }
+		if (hashtagsIdList.length > 0){
+			let valuesString = ""
+			for (let i = 1; i <= hashtagsIdList.length; i++) {
+				valuesString += `$${i}, `;
+			}
+			valuesString = valuesString.trim().replace(/.$/, '');
+			await deleteHashtagData(hashtagsIdList, valuesString)
+		}
+
+			return res.sendStatus(200);
+	
+			} catch (error) {
+					return res
+			.status(422)
+			.send(error.message);
+			}
+
+	} else {
+			return res
+		.status(404)
+		.send(`The following errors an occurred:\n\nInvalid Id.`);
+	}
 
 }
 
