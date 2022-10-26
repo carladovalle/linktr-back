@@ -28,7 +28,7 @@ async function publishPostWithoutContent(link, userId) {
 	);
 }
 
-async function listAllPosts() {
+async function listAllPosts(offset, limit) {
 	return connection.query(`
 		SELECT 
 			posts.*,
@@ -43,8 +43,9 @@ async function listAllPosts() {
 			ON posts.id = metadatas."postId"
 		GROUP BY posts.id, users.name, users.image, users.id, metadatas.url, metadatas.title, metadatas.image, metadatas.description
 		ORDER BY posts."id" DESC
-		LIMIT 20
-		`);
+		LIMIT $1
+		OFFSET $2	
+		`,[limit, offset]);
 }
 
 async function findPost(postId) {

@@ -11,7 +11,7 @@ async function findUserById(id) {
 	return connection.query('SELECT * FROM users WHERE id = $1', [Number(id)]);
 }
 
-async function listUserPosts(id) {
+async function listUserPosts(id, offset, limit) {
 	return connection.query(
 		`
 		SELECT 
@@ -28,8 +28,9 @@ async function listUserPosts(id) {
 		WHERE users.id = $1
 		GROUP BY posts.id, users.name, users.image, users.id, metadatas.url, metadatas.title, metadatas.image, metadatas.description
 		ORDER BY posts."id" DESC
-		LIMIT 20`,
-		[Number(id)]
+		LIMIT $3
+		OFFSET $2`,
+		[Number(id), offset, limit]
 	);
 }
 
