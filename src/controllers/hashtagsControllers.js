@@ -13,10 +13,10 @@ async function listHashtags(req, res) {
 
 async function findPostByHashtag(req, res) {
     const {hashtag} = req.params
-    const list = []
+    const { offset, limit } = req.query
 
         try {
-	        const query = await listHashtagPosts(hashtag)	
+	        const query = await listHashtagPosts(hashtag, offset, limit )	
 		res.send(query.rows)
 	} catch (error) {
 		console.log(error)

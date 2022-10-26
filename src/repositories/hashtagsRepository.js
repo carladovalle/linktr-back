@@ -7,7 +7,7 @@ async function getHashtags() {
     LIMIT 10`);
 }
 
-async function listHashtagPosts(hashtag) {
+async function listHashtagPosts(hashtag, offset, limit) {
 	return connection.query(
 		`SELECT 
 		    posts.*,
@@ -23,8 +23,9 @@ async function listHashtagPosts(hashtag) {
 		WHERE posts.content ILIKE $1
 		GROUP BY posts.id, users.name, users.image, users.id, metadatas.url, metadatas.title, metadatas.image, metadatas.description
 		ORDER BY posts."id" DESC
-		LIMIT 20`,
-		[`%${hashtag}%`]
+		LIMIT $2
+		OFFSET $3`,
+		[`%${hashtag}%`, limit, offset]
 	);
 }
 
