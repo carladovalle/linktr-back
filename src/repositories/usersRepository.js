@@ -2,7 +2,17 @@ import { connection } from '../db/db.js';
 
 async function findUsers(word) {
 	return connection.query(
-		'SELECT id, name, image FROM users WHERE name ILIKE $1',
+		`SELECT 
+			users.id, 
+			users.name, 
+			users.image, 
+			followers."profileUserId"
+		FROM users
+		LEFT JOIN followers
+			ON users.id = followers."profileUserId"
+		WHERE users.name ILIKE $1
+		GROUP BY users.id, followers."profileUserId"
+		ORDER BY followers."profileUserId"`,
 		[`%${word}%`]
 	);
 }
