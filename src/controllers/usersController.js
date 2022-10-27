@@ -1,4 +1,4 @@
-import { findUserById, findUsers, listUserPosts } from '../repositories/usersRepository.js';
+import { findUserById, findUsers, getUserInfo, listUserPosts } from '../repositories/usersRepository.js';
 
 async function searchUsers(req, res) {
 	const { word } = req.params;
@@ -22,13 +22,15 @@ async function getUserById(req, res) {
 			return res.status(404).send('There are no users with this id.');
 		}
 
-		const userPosts = await listUserPosts(id, offset, limit)
+		const userInfo = await getUserInfo(id);
+		const userPosts = await listUserPosts(id, offset, limit);
 
-		if (userPosts.length === 0) {
-			return res.status(200).send(userPosts.rows);
+		const userObject = {
+			...userInfo.rows[0],
+			userPosts: userPosts.rows
 		}
-
-		return res.status(200).send(userPosts.rows);
+		
+		return res.status(200).send(userObject);
 	} catch (error) {
 		console.log(error);
 		return res.status(500).send(error.message);
