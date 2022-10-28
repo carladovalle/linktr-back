@@ -92,8 +92,20 @@ async function insertMetadata({ url, title, image, description }, id) {
 	);
 }
 
-async function getLastPostId(){
-	return connection.query("SELECT * FROM posts ORDER BY id DESC LIMIT 1;")
+async function getLastPostId(followsIds){
+		let ids = "";
+
+		followsIds.map((follow, index) => {
+			if (index === 0 && followsIds.length !== 1) {
+				ids = `"userId" = ${follow} OR `
+			} else if (index + 1 !== followsIds.length && followsIds.length !== 1) {
+				ids = ids + `"userId" = ${follow} OR `
+			} else {
+				ids = ids + `"userId" = ${follow}`
+			}	
+		})
+
+	return connection.query(`SELECT * FROM posts WHERE ${ids} ORDER BY id DESC LIMIT 1;`)
 }
 
 export {
