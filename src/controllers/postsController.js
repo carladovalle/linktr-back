@@ -261,7 +261,7 @@ async function repost(req,res){
 			WHERE reposts."userId" = $1 AND posts.id = $2;`,[reposterId, postId])
 
 
-		const { content, link, userId} = grabRepostedPost.rows[0]
+		const { content, link, userId } = grabRepostedPost.rows[0]
 
 		const insertRepostLikePost = await connection.query(`
 			INSERT INTO posts ("content", "link", "userId", "isrepost", "reposterid")
