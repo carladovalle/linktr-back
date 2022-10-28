@@ -1,7 +1,7 @@
 import { postSchema } from '../schemas/postSchema.js';
 import urlMetaData from 'url-metadata';
-import { addHashtag, deleteLikeData, deleteHashtagData, deleteMiddleTableData, deletePostData, findPost, insertIntoMiddleTable, insertMetadata, listAllPosts, publishPost, publishPostWithoutContent, updateContent, updateLinkAndContent, getLastPostId } from '../repositories/postsRepository.js';
-
+import { addHashtag, deleteLikeData, deleteHashtagData, deleteMiddleTableData, deletePostData, findPost, insertIntoMiddleTable, insertMetadata, listAllPosts, publishPost, publishPostWithoutContent, updateContent, updateLinkAndContent, getLastPostId, deleteCommentData, countRepost } from '../repositories/postsRepository.js';
+import { connection } from "../db/db.js"
 
 async function sendPost(req, res) {
 	const { link, content } = req.body;
@@ -77,6 +77,24 @@ async function listPosts(req, res) {
 	const { offset, limit } = req.query
 	try {
 		const query = await listAllPosts(offset, limit)
+
+		for(let i = 0 ; i < query.rows.length ; i++){
+			if(query.rows[i].isrepost === true){
+				const reposterName = await connection.query(`
+				SELECT name FROM users WHERE id = $1
+				`, [query.rows[i].reposterid])
+				query.rows[i] = {
+					...query.rows[i],
+					reposterName : reposterName.rows[0].name
+				}
+			}else{
+				query.rows[i] = {
+					...query.rows[i],
+					reposterName : null
+				}
+			}
+		}
+
 		res.send(query.rows)
 	} catch (error) {
 		console.log(error);
@@ -198,6 +216,7 @@ async function deletePost (req, res) {
 			return res.status(401).send("post made by another user.");
 		}  
 
+		await deleteCommentData(postId)
 		await deleteLikeData(postId)
 		const idsRelation = await deleteMiddleTableData(postId)
 		await deletePostData(postId)
@@ -243,4 +262,100 @@ async function haveNewPost(req, res){
 	}
 }
 
-export { sendPost, listPosts, editPost, deletePost, haveNewPost }
+async function repost(req,res){
+	const id = res.locals.session.userId
+	const { postId } = req.body
+
+	try{
+		const checkRepost = await connection.query('SELECT * FROM reposts WHERE "userId" = $1 AND "postId" = $2', [id, postId])
+		if(checkRepost.rows.length !== 0){
+			return res.sendStatus(409)
+		}
+
+		const grabRepostedPost = await connection.query(`
+		SELECT * FROM posts WHERE id = $1;
+		`,[postId])
+
+		const { content, link, userId} = grabRepostedPost.rows[0]
+		const urlInfos = await urlMetaData(link, {
+			timeout: 20000,
+			descriptionLength: 120,
+		});
+
+		const insertRepost = await connection.query('INSERT INTO reposts ("userId", "postId") VALUES ($1,$2)',[id, postId])
+
+		
+
+		if (content) {
+			const hashtagsHashtable = {};
+			content
+				.split(' ')
+				.filter((word) => word[0] === '#')
+				.forEach(
+					(element) => (hashtagsHashtable[element.toLowerCase()] = true)
+				);
+			let valuesString = '';
+			for (let i = 1; i <= Object.keys(hashtagsHashtable).length; i++) {
+				valuesString += `($${i}), `;
+			}
+			valuesString = valuesString.trim().replace(/.$/, '');
+			const hashtags = Object.keys(hashtagsHashtable);
+
+			if (hashtags.length === 0) {
+				const insertRepostLikePost = await connection.query(`
+					INSERT INTO posts ("content", "link", "userId", "isrepost", "reposterid")
+					VALUES ($1,$2,$3,$4,$5)
+					RETURNING id`,[content, link, id, true, userId])
+				await insertMetadata(urlInfos, insertRepostLikePost.rows[0].id)
+
+				return res.sendStatus(201);
+			}
+
+			const insertRepostLikePost = await connection.query(`
+					INSERT INTO posts ("content", "link", "userId", "isrepost", "reposterid")
+					VALUES ($1,$2,$3,$4,$5)
+					RETURNING id`,[content, link, userId, true, id])
+
+			const insertedHashtagsId = await addHashtag(hashtags, valuesString)
+
+			await insertMetadata(urlInfos, insertRepostLikePost.rows[0].id)
+			
+			const hashtagsIdList = insertedHashtagsId.rows.map(
+				(element) => element.id
+			);
+			valuesString = '';
+			for (let i = 1; i <= hashtagsIdList.length; i++) {
+				valuesString += `($1, $${i + 1}), `;
+			}
+			valuesString = valuesString.trim().replace(/.$/, '');
+
+			await insertIntoMiddleTable(valuesString, insertRepostLikePost.rows[0].id, hashtagsIdList);
+
+			res.sendStatus(201);
+		} else {
+			const insertRepostLikePost = await connection.query(`
+					INSERT INTO posts ("content", "link", "userId", "isrepost", "reposterid")
+					VALUES ($1,$2,$3,$4,$5)
+					RETURNING id`,[content, link, userId, true, id])
+			await insertMetadata(urlInfos, insertRepostLikePost.rows[0].id);
+			res.sendStatus(201);
+		}
+	}catch(error){
+		console.log(error)
+		return res.sendStatus(500)
+	}
+}
+
+async function getRepostsNumber(req, res){
+	const { postId } = req.params
+
+	try{
+		const repostNumber = await countRepost(postId)
+		return res.status(200).send(repostNumber.rows[0])
+	}catch(error){
+		console.log(error)
+		return res.sendStatus(500)
+	}
+}
+
+export { sendPost, listPosts, editPost, deletePost, haveNewPost, repost, getRepostsNumber }

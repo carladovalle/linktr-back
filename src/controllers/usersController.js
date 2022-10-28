@@ -23,13 +23,13 @@ async function getUserById(req, res) {
 		}
 
 		const userInfo = await getUserInfo(id);
-		const userPosts = await listUserPosts(id, offset, limit)
+		const userPosts = await listUserPosts(id, offset, limit);
 
 		const userObject = {
 			...userInfo.rows[0],
 			userPosts: userPosts.rows
 		}
-
+		
 		return res.status(200).send(userObject);
 	} catch (error) {
 		console.log(error);

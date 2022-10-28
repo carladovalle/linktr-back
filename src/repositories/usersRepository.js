@@ -22,7 +22,11 @@ async function findUserById(id) {
 }
 
 async function getUserInfo(id) {
-	return connection.query('SELECT id, name, image FROM users WHERE id = $1', [
+	return connection.query(
+		`SELECT 
+			id, name, image 
+		FROM users 
+		WHERE id = $1`, [
 		Number(id),
 	]);
 }
