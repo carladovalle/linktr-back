@@ -96,6 +96,10 @@ async function getLastPostId(){
 	return connection.query("SELECT * FROM posts ORDER BY id DESC LIMIT 1;")
 }
 
+async function deleteRepost(postId, userId){
+	return connection.query(`DELETE FROM posts WHERE "userId" = $1 AND "postId" = $2 ;`, [userId ,postId])
+}
+
 export {
 	publishPost,
 	addHashtag,
@@ -111,4 +115,5 @@ export {
 	insertMetadata,
 	getLastPostId,
 	deleteHashtagData,
+	deleteRepost
 };

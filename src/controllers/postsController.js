@@ -1,6 +1,6 @@
 import { postSchema } from '../schemas/postSchema.js';
 import urlMetaData from 'url-metadata';
-import { addHashtag, deleteLikeData, deleteHashtagData, deleteMiddleTableData, deletePostData, findPost, insertIntoMiddleTable, insertMetadata, listAllPosts, publishPost, publishPostWithoutContent, updateContent, updateLinkAndContent, getLastPostId } from '../repositories/postsRepository.js';
+import { addHashtag, deleteLikeData, deleteHashtagData, deleteMiddleTableData, deletePostData, findPost, insertIntoMiddleTable, insertMetadata, listAllPosts, publishPost, publishPostWithoutContent, updateContent, updateLinkAndContent, getLastPostId, deleteRepost } from '../repositories/postsRepository.js';
 import { connection } from "../db/db.js"
 
 async function sendPost(req, res) {
