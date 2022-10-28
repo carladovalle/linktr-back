@@ -8,8 +8,8 @@ router.post('/posts/publish', authMiddleware, sendPost);
 router.put('/posts/edit/:postId', authMiddleware, editPost);
 router.delete('/posts/delete/:postId', authMiddleware, deletePost);
 router.get('/posts', authMiddleware, listPosts);
-router.get('/haveNewPost', haveNewPost)
-router.post('/repost', authMiddleware, repost)
-router.get('/repostNumber/:postId', getRepostsNumber)
+router.post('/haveNewPost', haveNewPost);
+router.post('/repost', authMiddleware, repost);
+router.get('/repostNumber/:postId', getRepostsNumber);
 
 export default router;

@@ -248,8 +248,10 @@ async function deletePost (req, res) {
 }
 
 async function haveNewPost(req, res){
+	const followsIds = req.body;
+
 	try{
-		const checkUpdate = await getLastPostId()
+		const checkUpdate = await getLastPostId(followsIds)
 		return res
 			.status(200)
 			.send({id:checkUpdate.rows[0].id})
