@@ -8,9 +8,13 @@ async function createCommentData(userId, postId, text) {
 }
 
 async function getCommentData(postId) {
-    return connection.query(
-        `SELECT * FROM comments WHERE "postId" = $1;`,
-        [postId]
+    return connection.query(`
+        SELECT c.*, u.username as author, u.image
+        FROM comments c
+        JOIN users u ON u.id = c."userId"
+        WHERE c."postId" = $1
+        ORDER BY c.id ASC;
+    `,[postId]
     );
 }
 
