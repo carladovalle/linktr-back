@@ -311,7 +311,7 @@ async function repost(req,res){
 			const insertRepostLikePost = await connection.query(`
 					INSERT INTO posts ("content", "link", "userId", "isrepost", "reposterid")
 					VALUES ($1,$2,$3,$4,$5)
-					RETURNING id`,[content, link, id, true, userId])
+					RETURNING id`,[content, link, userId, true, id])
 
 			const insertedHashtagsId = await addHashtag(hashtags, valuesString)
 
@@ -333,7 +333,7 @@ async function repost(req,res){
 			const insertRepostLikePost = await connection.query(`
 					INSERT INTO posts ("content", "link", "userId", "isrepost", "reposterid")
 					VALUES ($1,$2,$3,$4,$5)
-					RETURNING id`,[content, link, id, true, userId])
+					RETURNING id`,[content, link, userId, true, id])
 			await insertMetadata(urlInfos, insertRepostLikePost.rows[0].id);
 			res.sendStatus(201);
 		}
