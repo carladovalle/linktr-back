@@ -8,7 +8,7 @@ router.post('/posts/publish', authMiddleware, sendPost);
 router.put('/posts/edit/:postId', authMiddleware, editPost);
 router.delete('/posts/delete/:postId', authMiddleware, deletePost);
 router.get('/posts', authMiddleware, listPosts);
-router.post('/haveNewPost', haveNewPost);
+router.post('/haveNewPost', authMiddleware, haveNewPost);
 router.post('/repost', authMiddleware, repost);
 router.get('/repostNumber/:postId', getRepostsNumber);
 
