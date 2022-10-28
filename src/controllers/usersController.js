@@ -1,5 +1,4 @@
-import urlMetaData from 'url-metadata';
-import { findUserById, findUsers, listUserPosts } from '../repositories/usersRepository.js';
+import { findUserById, findUsers, getUserInfo, listUserPosts } from '../repositories/usersRepository.js';
 
 async function searchUsers(req, res) {
 	const { word } = req.params;
@@ -14,35 +13,24 @@ async function searchUsers(req, res) {
 
 async function getUserById(req, res) {
 	const { id } = req.params;
+	const { offset, limit } = req.query;
 
 	try {
 		const user = await findUserById(id)
 
-		if (user.rows.length === 0) {
+		if (user.rows.length === 0 && offset === 0) {
 			return res.status(404).send('There are no users with this id.');
 		}
 
-		const userPosts = await listUserPosts(id)
-		const list = [];
+		const userInfo = await getUserInfo(id);
+		const userPosts = await listUserPosts(id, offset, limit);
 
-		if (userPosts.rows[0].link === null) {
-			return res.status(200).send(userPosts.rows);
+		const userObject = {
+			...userInfo.rows[0],
+			userPosts: userPosts.rows
 		}
-
-		for (let i = 0; i < userPosts.rows.length; i++) {
-			const metadata = await urlMetaData(userPosts.rows[i].link);
-			list.push({
-				...userPosts.rows[i],
-				urlInfos: {
-					url: metadata.url,
-					title: metadata.title,
-					image: metadata.image,
-					description: metadata.description,
-				},
-			});
-		}
-
-		return res.status(200).send(list);
+		
+		return res.status(200).send(userObject);
 	} catch (error) {
 		console.log(error);
 		return res.status(500).send(error.message);

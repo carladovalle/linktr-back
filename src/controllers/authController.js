@@ -59,7 +59,7 @@ async function login(req, res) {
 		}
 	} catch (error) {
 		console.log(error);
-		return res.status(500).send(error);
+		return res.status(500).send("An error occurred while logging in. Please review the fields");
 	}
 
 	try {
@@ -67,7 +67,7 @@ async function login(req, res) {
 		return res.send({ token });
 	} catch (error) {
 		console.log(error);
-		return res.status(500).send(error);
+		return res.status(500).send("An error occurred while logging in. Please review the fields");
 	}
 }
 

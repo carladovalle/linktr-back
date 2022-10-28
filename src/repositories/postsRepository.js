@@ -22,18 +22,30 @@ async function insertIntoMiddleTable(valuesString, id, hashtagsIdList) {
 }
 
 async function publishPostWithoutContent(link, userId) {
-	return connection.query('INSERT INTO posts (link, "userId") VALUES($1, $2)', [
-		link,
-		userId,
-	]);
+	return connection.query(
+		'INSERT INTO posts (link, "userId") VALUES($1, $2) RETURNING id',
+		[link, userId]
+	);
 }
 
-async function listAllPosts() {
+async function listAllPosts(offset, limit) {
 	return connection.query(`
-		SELECT posts.*, users.name, users.image, users.id AS "userId" FROM posts
-				JOIN users ON posts."userId" = users.id
-				ORDER BY posts."id" DESC 
-				LIMIT 20`);
+		SELECT 
+			posts.*,
+			users.name,
+			users.image,
+			users.id AS "userId",
+			json_build_object('url', metadatas.url, 'title', metadatas.title, 'image', metadatas.image, 'description', metadatas.description) AS "urlInfos"
+		FROM posts
+		JOIN users 
+			ON posts."userId" = users.id
+		JOIN metadatas 
+			ON posts.id = metadatas."postId"
+		GROUP BY posts.id, users.name, users.image, users.id, metadatas.url, metadatas.title, metadatas.image, metadatas.description
+		ORDER BY posts."id" DESC
+		LIMIT $1
+		OFFSET $2	
+		`,[limit, offset]);
 }
 
 async function findPost(postId) {
@@ -59,13 +71,29 @@ async function deleteLikeData(postId) {
 }
 
 async function deleteMiddleTableData(postId) {
-	return connection.query(`DELETE FROM "postsHashtags" WHERE "postId" = $1;`, [
-		postId,
-	]);
+	return connection.query(
+		`DELETE FROM "postsHashtags" WHERE "postId" = $1 RETURNING "hashtagId";`,
+		[postId]
+	);
+}
+
+async function deleteHashtagData(ids, string) {
+	return connection.query(`DELETE FROM hashtags WHERE id IN (${string});`, ids);
 }
 
 async function deletePostData(postId) {
 	return connection.query(`DELETE FROM posts WHERE id = $1;`, [postId]);
+}
+
+async function insertMetadata({ url, title, image, description }, id) {
+	return connection.query(
+		'INSERT INTO metadatas (url, title, image, description, "postId") VALUES($1, $2, $3, $4, $5)',
+		[url, title, image, description, id]
+	);
+}
+
+async function getLastPostId(){
+	return connection.query("SELECT * FROM posts ORDER BY id DESC LIMIT 1;")
 }
 
 export {
@@ -80,4 +108,7 @@ export {
 	deleteLikeData,
 	deleteMiddleTableData,
 	deletePostData,
+	insertMetadata,
+	getLastPostId,
+	deleteHashtagData,
 };
