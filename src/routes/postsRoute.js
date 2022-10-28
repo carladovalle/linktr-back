@@ -10,6 +10,6 @@ router.delete('/posts/delete/:postId', authMiddleware, deletePost);
 router.get('/posts', authMiddleware, listPosts);
 router.get('/haveNewPost', haveNewPost)
 router.post('/repost', authMiddleware, repost)
-router.get('/repostNumber', getRepostsNumber)
+router.get('/repostNumber/:postId', getRepostsNumber)
 
 export default router;

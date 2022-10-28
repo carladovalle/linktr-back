@@ -345,7 +345,7 @@ async function repost(req,res){
 }
 
 async function getRepostsNumber(req, res){
-	const { postId } = req.body	
+	const { postId } = req.params
 
 	try{
 		const repostNumber = await countRepost(postId)
