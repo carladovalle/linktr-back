@@ -7,17 +7,24 @@ async function createCommentData(userId, postId, text) {
     );
 }
 
-async function getCommentData(postId) {
+async function getCommentData(userId, postId) {
     return connection.query(`
-        SELECT comments.*, users.name as author, users.image, followers."profileUserId"
+        SELECT 
+            comments.*, 
+            users.name AS author, 
+            users.image, 
+            (
+				SELECT followers.id
+				FROM followers
+				WHERE followers."profileUserId" = users.id
+				AND followers."followerUserId" = $1
+			) AS "isFollowing"
         FROM comments
-        LEFT JOIN followers
-            ON comments."userId" = followers."profileUserId"
-        LEFT JOIN users
+        JOIN users
             ON comments."userId" = users.id
-        WHERE comments."postId" = $1
+        WHERE comments."postId" = $2
         ORDER BY comments.id ASC;
-    `,[postId]
+    `,[userId, postId]
     );
 }
 
