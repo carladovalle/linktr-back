@@ -1,7 +1,7 @@
 import { postSchema } from '../schemas/postSchema.js';
 import urlMetaData from 'url-metadata';
 import { addHashtag, deleteLikeData, deleteHashtagData, deleteMiddleTableData, deletePostData, findPost, insertIntoMiddleTable, insertMetadata, listAllPosts, publishPost, publishPostWithoutContent, updateContent, updateLinkAndContent, getLastPostId } from '../repositories/postsRepository.js';
-
+import { connection } from "../db/db.js"
 
 async function sendPost(req, res) {
 	const { link, content } = req.body;
@@ -241,4 +241,37 @@ async function haveNewPost(req, res){
 	}
 }
 
-export { sendPost, listPosts, editPost, deletePost, haveNewPost }
+async function repost(req,res){
+	const reposterId = res.locals.session.userId
+	const { postId } = req.body
+
+	try{
+		const checkRepost = await connection.query('SELECT * FROM reposts WHERE "userId" = $1 AND "postId" = $2', [reposterId, postId])
+		if(checkRepost.rows.length !== 0){
+			return res.sendStatus(409)
+		}
+
+		const insertRepost = await connection.query('INSERT INTO reposts ("userId", "postId") VALUES ($1,$2)',[reposterId, postId])
+
+		const grabRepostedPost = await connection.query(`
+			SELECT 
+				content, link, posts."userId", isrepost, reposterid 
+			FROM posts 
+				JOIN reposts ON posts.id = reposts."postId" 
+			WHERE reposts."userId" = $1 AND posts.id = $2;`,[reposterId, postId])
+
+
+		const { content, link, userId} = grabRepostedPost.rows[0]
+
+		const insertRepostLikePost = await connection.query(`
+			INSERT INTO posts ("content", "link", "userId", "isrepost", "reposterid")
+			VALUES ($1,$2,$3,$4,$5)`,[content, link, userId, true, reposterId])
+
+		return res.status(201).send(grabRepostedPost.rows)
+	}catch(error){
+		console.log(error)
+		return res.sendStatus(5000)
+	}
+}
+
+export { sendPost, listPosts, editPost, deletePost, haveNewPost, repost }
