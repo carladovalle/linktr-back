@@ -77,6 +77,24 @@ async function listPosts(req, res) {
 	const { offset, limit } = req.query
 	try {
 		const query = await listAllPosts(offset, limit)
+
+		for(let i = 0 ; i < query.rows.length ; i++){
+			if(query.rows[i].isrepost === true){
+				const reposterName = await connection.query(`
+				SELECT name FROM users WHERE id = $1
+				`, [query.rows[i].reposterid])
+				query.rows[i] = {
+					...query.rows[i],
+					reposterName : reposterName.rows[0].name
+				}
+			}else{
+				query.rows[i] = {
+					...query.rows[i],
+					reposterName : null
+				}
+			}
+		}
+
 		res.send(query.rows)
 	} catch (error) {
 		console.log(error);
@@ -242,35 +260,86 @@ async function haveNewPost(req, res){
 }
 
 async function repost(req,res){
-	const reposterId = res.locals.session.userId
+	const id = res.locals.session.userId
 	const { postId } = req.body
 
 	try{
-		const checkRepost = await connection.query('SELECT * FROM reposts WHERE "userId" = $1 AND "postId" = $2', [reposterId, postId])
+		const checkRepost = await connection.query('SELECT * FROM reposts WHERE "userId" = $1 AND "postId" = $2', [id, postId])
 		if(checkRepost.rows.length !== 0){
 			return res.sendStatus(409)
 		}
 
-		const insertRepost = await connection.query('INSERT INTO reposts ("userId", "postId") VALUES ($1,$2)',[reposterId, postId])
-
 		const grabRepostedPost = await connection.query(`
-			SELECT 
-				content, link, posts."userId", isrepost, reposterid 
-			FROM posts 
-				JOIN reposts ON posts.id = reposts."postId" 
-			WHERE reposts."userId" = $1 AND posts.id = $2;`,[reposterId, postId])
-
+		SELECT * FROM posts WHERE id = $1;
+		`,[postId])
 
 		const { content, link, userId} = grabRepostedPost.rows[0]
+		const urlInfos = await urlMetaData(link, {
+			timeout: 20000,
+			descriptionLength: 120,
+		});
 
-		const insertRepostLikePost = await connection.query(`
-			INSERT INTO posts ("content", "link", "userId", "isrepost", "reposterid")
-			VALUES ($1,$2,$3,$4,$5)`,[content, link, userId, true, reposterId])
+		const insertRepost = await connection.query('INSERT INTO reposts ("userId", "postId") VALUES ($1,$2)',[id, postId])
 
-		return res.status(201).send(grabRepostedPost.rows)
+		
+
+		if (content) {
+			const hashtagsHashtable = {};
+			content
+				.split(' ')
+				.filter((word) => word[0] === '#')
+				.forEach(
+					(element) => (hashtagsHashtable[element.toLowerCase()] = true)
+				);
+			let valuesString = '';
+			for (let i = 1; i <= Object.keys(hashtagsHashtable).length; i++) {
+				valuesString += `($${i}), `;
+			}
+			valuesString = valuesString.trim().replace(/.$/, '');
+			const hashtags = Object.keys(hashtagsHashtable);
+
+			if (hashtags.length === 0) {
+				const insertRepostLikePost = await connection.query(`
+					INSERT INTO posts ("content", "link", "userId", "isrepost", "reposterid")
+					VALUES ($1,$2,$3,$4,$5)
+					RETURNING id`,[content, link, id, true, userId])
+				await insertMetadata(urlInfos, insertRepostLikePost.rows[0].id)
+
+				return res.sendStatus(201);
+			}
+
+			const insertRepostLikePost = await connection.query(`
+					INSERT INTO posts ("content", "link", "userId", "isrepost", "reposterid")
+					VALUES ($1,$2,$3,$4,$5)
+					RETURNING id`,[content, link, id, true, userId])
+
+			const insertedHashtagsId = await addHashtag(hashtags, valuesString)
+
+			await insertMetadata(urlInfos, insertRepostLikePost.rows[0].id)
+			
+			const hashtagsIdList = insertedHashtagsId.rows.map(
+				(element) => element.id
+			);
+			valuesString = '';
+			for (let i = 1; i <= hashtagsIdList.length; i++) {
+				valuesString += `($1, $${i + 1}), `;
+			}
+			valuesString = valuesString.trim().replace(/.$/, '');
+
+			await insertIntoMiddleTable(valuesString, insertRepostLikePost.rows[0].id, hashtagsIdList);
+
+			res.sendStatus(201);
+		} else {
+			const insertRepostLikePost = await connection.query(`
+					INSERT INTO posts ("content", "link", "userId", "isrepost", "reposterid")
+					VALUES ($1,$2,$3,$4,$5)
+					RETURNING id`,[content, link, id, true, userId])
+			await insertMetadata(urlInfos, insertRepostLikePost.rows[0].id);
+			res.sendStatus(201);
+		}
 	}catch(error){
 		console.log(error)
-		return res.sendStatus(5000)
+		return res.sendStatus(500)
 	}
 }
 
