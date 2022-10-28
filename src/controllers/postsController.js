@@ -1,6 +1,6 @@
 import { postSchema } from '../schemas/postSchema.js';
 import urlMetaData from 'url-metadata';
-import { addHashtag, deleteLikeData, deleteHashtagData, deleteMiddleTableData, deletePostData, findPost, insertIntoMiddleTable, insertMetadata, listAllPosts, publishPost, publishPostWithoutContent, updateContent, updateLinkAndContent, getLastPostId } from '../repositories/postsRepository.js';
+import { addHashtag, deleteLikeData, deleteHashtagData, deleteMiddleTableData, deletePostData, findPost, insertIntoMiddleTable, insertMetadata, listAllPosts, publishPost, publishPostWithoutContent, updateContent, updateLinkAndContent, getLastPostId, deleteCommentData, countRepost } from '../repositories/postsRepository.js';
 import { connection } from "../db/db.js"
 
 async function sendPost(req, res) {
@@ -216,6 +216,7 @@ async function deletePost (req, res) {
 			return res.status(401).send("post made by another user.");
 		}  
 
+		await deleteCommentData(postId)
 		await deleteLikeData(postId)
 		const idsRelation = await deleteMiddleTableData(postId)
 		await deletePostData(postId)
@@ -343,4 +344,16 @@ async function repost(req,res){
 	}
 }
 
-export { sendPost, listPosts, editPost, deletePost, haveNewPost, repost }
+async function getRepostsNumber(req, res){
+	const { postId } = req.body	
+
+	try{
+		const repostNumber = await countRepost(postId)
+		return res.status(200).send(repostNumber.rows[0])
+	}catch(error){
+		console.log(error)
+		return res.sendStatus(500)
+	}
+}
+
+export { sendPost, listPosts, editPost, deletePost, haveNewPost, repost, getRepostsNumber }

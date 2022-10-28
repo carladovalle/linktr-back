@@ -70,6 +70,10 @@ async function deleteLikeData(postId) {
 	return connection.query(`DELETE FROM likes WHERE "postId" = $1;`, [postId]);
 }
 
+async function deleteCommentData(postId) {
+	return connection.query(`DELETE FROM comments WHERE "postId" = $1;`, [postId]);
+}
+
 async function deleteMiddleTableData(postId) {
 	return connection.query(
 		`DELETE FROM "postsHashtags" WHERE "postId" = $1 RETURNING "hashtagId";`,
@@ -96,6 +100,10 @@ async function getLastPostId(){
 	return connection.query("SELECT * FROM posts ORDER BY id DESC LIMIT 1;")
 }
 
+async function countRepost(postId){
+	return connection.query('SELECT COUNT(*) FROM reposts WHERE reposts."postId" = $1;',[postId])
+}
+
 export {
 	publishPost,
 	addHashtag,
@@ -111,4 +119,6 @@ export {
 	insertMetadata,
 	getLastPostId,
 	deleteHashtagData,
+	deleteCommentData,
+	countRepost
 };
