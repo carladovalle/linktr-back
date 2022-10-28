@@ -1,4 +1,4 @@
-import { follow, getIsFollowed, unfollow } from "../repositories/followsRepository.js";
+import { follow, getIsFollowed, getUserFollows, unfollow } from "../repositories/followsRepository.js";
 
 async function getFollows (req, res) {
     const { userId } = res.locals.session;
@@ -9,6 +9,17 @@ async function getFollows (req, res) {
         return res.status(200).send(isFollowed);
     } catch (error) {
         return res.status(500).send("followers not available.");
+    }
+}
+
+async function userFollows (req, res) {
+    const { userId } = res.locals.session;
+
+    try {
+        const userFollows = await getUserFollows(userId);
+        return res.status(200).send(userFollows);
+    } catch (error) {
+        return res.status(500).send("user follows not available.");
     }
 }
 
@@ -33,4 +44,4 @@ async function changeFollows (req, res) {
     }
 }
 
-export { getFollows, changeFollows };
+export { getFollows, userFollows, changeFollows };

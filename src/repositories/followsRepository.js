@@ -17,6 +17,19 @@ async function getIsFollowed (userId, followedId) {
 
 }
 
+async function getUserFollows (userId) {
+
+    try {
+        const userFollows = (await connection.query(`SELECT "profileUserId" FROM followers 
+        WHERE "followerUserId" = $1`, [userId])).rows;
+
+        return userFollows;
+    } catch (error) {
+        return res.status(500).send("user follows not available");
+    }
+
+}
+
 async function unfollow (userId, followedId) {
 
     try {
@@ -43,4 +56,4 @@ async function follow (userId, followedId) {
 
 }
 
-export { getIsFollowed, unfollow, follow };
+export { getIsFollowed, getUserFollows, unfollow, follow };

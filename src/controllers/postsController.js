@@ -1,6 +1,6 @@
 import { postSchema } from '../schemas/postSchema.js';
 import urlMetaData from 'url-metadata';
-import { addHashtag, deleteLikeData, deleteHashtagData, deleteMiddleTableData, deletePostData, findPost, insertIntoMiddleTable, insertMetadata, listAllPosts, publishPost, publishPostWithoutContent, updateContent, updateLinkAndContent, getLastPostId } from '../repositories/postsRepository.js';
+import { addHashtag, deleteLikeData, deleteHashtagData, deleteMiddleTableData, deletePostData, findPost, insertIntoMiddleTable, insertMetadata, listAllPosts, publishPost, publishPostWithoutContent, updateContent, updateLinkAndContent, getLastPostId, deleteCommentData, countRepost } from '../repositories/postsRepository.js';
 import { connection } from "../db/db.js"
 
 async function sendPost(req, res) {
@@ -216,6 +216,7 @@ async function deletePost (req, res) {
 			return res.status(401).send("post made by another user.");
 		}  
 
+		await deleteCommentData(postId)
 		await deleteLikeData(postId)
 		const idsRelation = await deleteMiddleTableData(postId)
 		await deletePostData(postId)
@@ -247,8 +248,10 @@ async function deletePost (req, res) {
 }
 
 async function haveNewPost(req, res){
+	const followsIds = req.body;
+
 	try{
-		const checkUpdate = await getLastPostId()
+		const checkUpdate = await getLastPostId(followsIds)
 		return res
 			.status(200)
 			.send({id:checkUpdate.rows[0].id})
@@ -311,7 +314,7 @@ async function repost(req,res){
 			const insertRepostLikePost = await connection.query(`
 					INSERT INTO posts ("content", "link", "userId", "isrepost", "reposterid")
 					VALUES ($1,$2,$3,$4,$5)
-					RETURNING id`,[content, link, id, true, userId])
+					RETURNING id`,[content, link, userId, true, id])
 
 			const insertedHashtagsId = await addHashtag(hashtags, valuesString)
 
@@ -333,7 +336,7 @@ async function repost(req,res){
 			const insertRepostLikePost = await connection.query(`
 					INSERT INTO posts ("content", "link", "userId", "isrepost", "reposterid")
 					VALUES ($1,$2,$3,$4,$5)
-					RETURNING id`,[content, link, id, true, userId])
+					RETURNING id`,[content, link, userId, true, id])
 			await insertMetadata(urlInfos, insertRepostLikePost.rows[0].id);
 			res.sendStatus(201);
 		}
@@ -343,4 +346,16 @@ async function repost(req,res){
 	}
 }
 
-export { sendPost, listPosts, editPost, deletePost, haveNewPost, repost }
+async function getRepostsNumber(req, res){
+	const { postId } = req.params
+
+	try{
+		const repostNumber = await countRepost(postId)
+		return res.status(200).send(repostNumber.rows[0])
+	}catch(error){
+		console.log(error)
+		return res.sendStatus(500)
+	}
+}
+
+export { sendPost, listPosts, editPost, deletePost, haveNewPost, repost, getRepostsNumber }
