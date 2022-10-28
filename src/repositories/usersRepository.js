@@ -1,19 +1,21 @@
 import { connection } from '../db/db.js';
 
-async function findUsers(word) {
+async function findUsers(userId, word) {
 	return connection.query(
 		`SELECT 
 			users.id, 
 			users.name, 
 			users.image, 
-			followers."profileUserId"
+			(
+				SELECT followers.id
+				FROM followers
+				WHERE followers."profileUserId" = users.id
+				AND followers."followerUserId" = $1
+			) AS "isFollowing"
 		FROM users
-		LEFT JOIN followers
-			ON users.id = followers."profileUserId"
-		WHERE users.name ILIKE $1
-		GROUP BY users.id, followers."profileUserId"
-		ORDER BY followers."profileUserId"`,
-		[`%${word}%`]
+		WHERE users.name ILIKE $2
+		ORDER BY "isFollowing"`,
+		[userId, `%${word}%`]
 	);
 }
 

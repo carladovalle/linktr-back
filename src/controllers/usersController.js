@@ -2,9 +2,10 @@ import { findUserById, findUsers, getUserInfo, listUserPosts } from '../reposito
 
 async function searchUsers(req, res) {
 	const { word } = req.params;
+	const {userId} = res.locals.session;
 
 	try {
-		const userList = await findUsers(word)
+		const userList = await findUsers(userId, word)
 		return res.status(200).send(userList.rows);
 	} catch (error) {
 		return res.status(500).send(error.message);

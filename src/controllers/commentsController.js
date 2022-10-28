@@ -19,9 +19,10 @@ async function createComment(req, res) {
 
 async function getComment(req, res) {
 	const { postId } = req.params;
+	const { userId } = res.locals.session;
 
 	try {
-		const comments = await getCommentData(postId);
+		const comments = await getCommentData(userId, postId);
 		return res.status(200).send(comments.rows);
 	} catch (error) {
 		return res.status(500).send(error);
